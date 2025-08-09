@@ -2,7 +2,7 @@
   "name": "QA Process Data - Công nghệ mì",
   "short_name": "QA Data",
   "description": "Ứng dụng nhập liệu QA cho quy trình sản xuất mì",
-  "start_url": "/",
+  "start_url": "/AppCF/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0078d4",
