@@ -4,9 +4,9 @@ const APP_CONFIG = {
     // Azure AD / MSAL Configuration
     msalConfig: {
         auth: {
-            clientId: "076541aa-c734-405e-8518-ed52b67f8cbd", // Replace with your App Registration Client ID
-            authority: "https://login.microsoftonline.com/81060475-7e7f-4ede-8d8d-bf61f53ca528", // Replace with your Tenant ID
-            redirectUri: window.location.origin // Will use GitHub Pages URL
+            clientId: "076541aa-c734-405e-8518-ed52b67f8cbd",
+            authority: "https://login.microsoftonline.com/81060475-7e7f-4ede-8d8d-bf61f53ca528",
+            redirectUri: "https://hoitkn.github.io/AppCF/"
         },
         cache: {
             cacheLocation: "sessionStorage",
