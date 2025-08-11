@@ -1,4 +1,4 @@
-// js/form.js
+// js/form.js - Updated for Sidebar Navigation App
 
 class FormManager {
     constructor() {
@@ -20,21 +20,29 @@ class FormManager {
         idField.type = 'hidden';
         idField.id = 'recordId';
         idField.value = randomId;
-        document.getElementById('processDataForm').appendChild(idField);
+        
+        const form = document.getElementById('processDataForm');
+        if (form) {
+            form.appendChild(idField);
+        }
     }
 
     setupFieldListeners() {
         // Site change listener
         const siteSelect = document.getElementById('site');
-        siteSelect.addEventListener('change', () => {
-            this.filterProductCodes();
-        });
+        if (siteSelect) {
+            siteSelect.addEventListener('change', () => {
+                this.filterProductCodes();
+            });
+        }
 
         // Product code change listener
         const maDKSXSelect = document.getElementById('maDKSX');
-        maDKSXSelect.addEventListener('change', () => {
-            this.loadProductParameters();
-        });
+        if (maDKSXSelect) {
+            maDKSXSelect.addEventListener('change', () => {
+                this.loadProductParameters();
+            });
+        }
 
         // Add validation listeners for numeric fields
         const numericFields = [
@@ -62,39 +70,43 @@ class FormManager {
             if (parameters && parameters.length > 0) {
                 // Populate product codes dropdown
                 const maDKSXSelect = document.getElementById('maDKSX');
-                maDKSXSelect.innerHTML = '<option value="">Chọn mã ĐKSX...</option>';
-                
-                // Get unique product codes
-                const uniqueCodes = new Set();
-                parameters.forEach(param => {
-                    const fields = param.fields || param;
-                    const code = fields['M_x00e3__x0020__x0110_KSX'] || fields['MaDKSX'];
-                    if (code) {
-                        uniqueCodes.add(code);
-                    }
-                });
-                
-                // Add to dropdown
-                Array.from(uniqueCodes).sort().forEach(code => {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = code;
-                    maDKSXSelect.appendChild(option);
-                });
-                
-                console.log(`Loaded ${uniqueCodes.size} product codes`);
+                if (maDKSXSelect) {
+                    maDKSXSelect.innerHTML = '<option value="">Chọn mã ĐKSX...</option>';
+                    
+                    // Get unique product codes
+                    const uniqueCodes = new Set();
+                    parameters.forEach(param => {
+                        const fields = param.fields || param;
+                        const code = fields['M_x00e3__x0020__x0110_KSX'] || fields['MaDKSX'];
+                        if (code) {
+                            uniqueCodes.add(code);
+                        }
+                    });
+                    
+                    // Add to dropdown
+                    Array.from(uniqueCodes).sort().forEach(code => {
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.textContent = code;
+                        maDKSXSelect.appendChild(option);
+                    });
+                    
+                    console.log(`Loaded ${uniqueCodes.size} product codes`);
+                }
             }
         } catch (error) {
             console.error('Error loading parameters:', error);
-            app.showToast('Cảnh báo', 'Không thể tải thông số sản phẩm', 'warning');
+            if (typeof app !== 'undefined') {
+                app.showToast('Cảnh báo', 'Không thể tải thông số sản phẩm', 'warning');
+            }
         }
     }
 
     filterProductCodes() {
-        const site = document.getElementById('site').value;
+        const site = document.getElementById('site')?.value;
         const maDKSXSelect = document.getElementById('maDKSX');
         
-        if (!site) {
+        if (!site || !maDKSXSelect) {
             return;
         }
         
@@ -110,7 +122,7 @@ class FormManager {
     }
 
     loadProductParameters() {
-        const maDKSX = document.getElementById('maDKSX').value;
+        const maDKSX = document.getElementById('maDKSX')?.value;
         
         if (!maDKSX) {
             this.clearParameterDisplay();
@@ -125,7 +137,10 @@ class FormManager {
             
             // Display product name
             const productName = params['T_x00ea_n_x0020_tr_x00ea_n_x00'] || params['TenTrenDKSX'] || '-';
-            document.getElementById('productName').textContent = productName;
+            const productNameElement = document.getElementById('productName');
+            if (productNameElement) {
+                productNameElement.textContent = productName;
+            }
             
             // Display validation ranges
             this.displayValidationRanges(params);
@@ -138,35 +153,51 @@ class FormManager {
         // Brix Kansui range
         const brixKanMin = params['Brix_x0020_Kansui_x0020_Min'] || params['BrixKansuiMin'] || 7;
         const brixKanMax = params['Brix_x0020_Kansui_x0020_Max'] || params['BrixKansuiMax'] || 10;
-        document.getElementById('brixKansuiRange').textContent = `${brixKanMin} - ${brixKanMax}`;
+        const brixKansuiRange = document.getElementById('brixKansuiRange');
+        if (brixKansuiRange) {
+            brixKansuiRange.textContent = `${brixKanMin} - ${brixKanMax}`;
+        }
         
         // Temperature Kansui range
         const tempKanMin = params['Nhi_x1ec7_t_x0020_Kanshui_x00'] || params['NhietKanshuiMin'] || 15;
         const tempKanMax = params['Nhi_x1ec7_t_x0020_Kanshui_x000'] || params['NhietKanshuiMax'] || 30;
-        document.getElementById('nhietKansuiRange').textContent = `${tempKanMin} - ${tempKanMax}°C`;
+        const nhietKansuiRange = document.getElementById('nhietKansuiRange');
+        if (nhietKansuiRange) {
+            nhietKansuiRange.textContent = `${tempKanMin} - ${tempKanMax}°C`;
+        }
         
         // Brix Seasoning range
         const brixSeaMin = params['Brix_x0020_Sea_x0020_Min'] || params['BrixSeaMin'] || 0;
         const brixSeaMax = params['Brix_x0020_Sea_x0020_Max'] || params['BrixSeaMax'] || 50;
-        document.getElementById('brixSeaRange').textContent = `${brixSeaMin} - ${brixSeaMax}`;
+        const brixSeaRange = document.getElementById('brixSeaRange');
+        if (brixSeaRange) {
+            brixSeaRange.textContent = `${brixSeaMin} - ${brixSeaMax}`;
+        }
         
         // Thickness range
         const thickMin = params['_x0110__x1ed9__x0020_d_x00e0_y_x0'] || params['DoDayLaBotMin'] || 0.5;
         const thickMax = params['_x0110__x1ed9__x0020_d_x00e0_y_x1'] || params['DoDayLaBotMax'] || 2.0;
-        document.getElementById('doDayRange').textContent = `${thickMin} - ${thickMax} mm`;
+        const doDayRange = document.getElementById('doDayRange');
+        if (doDayRange) {
+            doDayRange.textContent = `${thickMin} - ${thickMax} mm`;
+        }
     }
 
     clearParameterDisplay() {
-        document.getElementById('productName').textContent = '-';
-        document.getElementById('brixKansuiRange').textContent = '-';
-        document.getElementById('nhietKansuiRange').textContent = '-';
-        document.getElementById('brixSeaRange').textContent = '-';
-        document.getElementById('doDayRange').textContent = '-';
+        const elements = ['productName', 'brixKansuiRange', 'nhietKansuiRange', 'brixSeaRange', 'doDayRange'];
+        elements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = '-';
+            }
+        });
         this.currentParameters = null;
     }
 
     validateField(fieldId) {
         const field = document.getElementById(fieldId);
+        if (!field) return true;
+        
         const value = parseFloat(field.value);
         
         if (!field.value || !this.currentParameters) {
@@ -214,7 +245,9 @@ class FormManager {
             
             if (!isValid) {
                 field.classList.add('is-invalid');
-                app.showToast('Cảnh báo', `Giá trị nằm ngoài khoảng cho phép (${min} - ${max})`, 'warning');
+                if (typeof app !== 'undefined') {
+                    app.showToast('Cảnh báo', `Giá trị nằm ngoài khoảng cho phép (${min} - ${max})`, 'warning');
+                }
             } else {
                 field.classList.remove('is-invalid');
                 field.classList.add('is-valid');
@@ -226,6 +259,8 @@ class FormManager {
 
     clearValidation() {
         const form = document.getElementById('processDataForm');
+        if (!form) return;
+        
         form.classList.remove('was-validated');
         
         // Remove validation classes
@@ -248,7 +283,9 @@ class FormManager {
         if (!form.checkValidity()) {
             event.stopPropagation();
             form.classList.add('was-validated');
-            app.showToast('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
+            if (typeof app !== 'undefined') {
+                app.showToast('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
+            }
             return;
         }
         
@@ -262,10 +299,17 @@ class FormManager {
             // Collect form data
             const formData = this.collectFormData();
             
-            // Save to SharePoint
+            // Save to SharePoint or localStorage
             await sharepointManager.createItem(formData);
             
-            app.showToast('Thành công', 'Dữ liệu đã được lưu thành công!', 'success');
+            if (typeof app !== 'undefined') {
+                app.showToast('Thành công', 'Dữ liệu đã được lưu thành công!', 'success');
+                
+                // Refresh dashboard if it exists
+                if (typeof app.refreshDashboard === 'function') {
+                    app.refreshDashboard();
+                }
+            }
             
             // Reset form
             form.reset();
@@ -275,10 +319,12 @@ class FormManager {
         } catch (error) {
             console.error('Submit error:', error);
             
-            if (error.message.includes('Offline')) {
-                app.showToast('Thông báo', 'Dữ liệu đã được lưu offline', 'warning');
-            } else {
-                app.showToast('Lỗi', 'Không thể lưu dữ liệu. Vui lòng thử lại.', 'error');
+            if (typeof app !== 'undefined') {
+                if (error.message.includes('Offline')) {
+                    app.showToast('Thông báo', 'Dữ liệu đã được lưu offline', 'warning');
+                } else {
+                    app.showToast('Lỗi', 'Không thể lưu dữ liệu. Vui lòng thử lại.', 'error');
+                }
             }
         } finally {
             this.isSubmitting = false;
@@ -288,44 +334,103 @@ class FormManager {
     }
 
     collectFormData() {
+        const getElementValue = (id) => {
+            const element = document.getElementById(id);
+            return element ? element.value : '';
+        };
+        
+        const getElementText = (id) => {
+            const element = document.getElementById(id);
+            return element ? element.textContent : '';
+        };
+        
         const formData = {
             // Basic info
-            site: document.getElementById('site').value,
-            maNhanVien: document.getElementById('maNhanVien').value,
-            lineSX: document.getElementById('lineSX').value,
-            maDKSX: document.getElementById('maDKSX').value,
-            sanPham: document.getElementById('productName').textContent,
+            site: getElementValue('site'),
+            maNhanVien: getElementValue('maNhanVien'),
+            lineSX: getElementValue('lineSX'),
+            maDKSX: getElementValue('maDKSX'),
+            sanPham: getElementText('productName'),
             
             // Kansui
-            brixKansui: document.getElementById('brixKansui').value,
-            nhietDoKansui: document.getElementById('nhietDoKansui').value,
-            ngoaiQuanKansui: document.getElementById('ngoaiQuanKansui').value,
+            brixKansui: getElementValue('brixKansui'),
+            nhietDoKansui: getElementValue('nhietDoKansui'),
+            ngoaiQuanKansui: getElementValue('ngoaiQuanKansui'),
             
             // Seasoning
-            brixSeasoning: document.getElementById('brixSeasoning').value,
-            ngoaiQuanSeasoning: document.getElementById('ngoaiQuanSeasoning').value,
-            doDayLaBot: document.getElementById('doDayLaBot').value,
+            brixSeasoning: getElementValue('brixSeasoning'),
+            ngoaiQuanSeasoning: getElementValue('ngoaiQuanSeasoning'),
+            doDayLaBot: getElementValue('doDayLaBot'),
             
             // Temperature
-            nhietDauTrai: document.getElementById('nhietDauTrai').value,
-            nhietDauPhai: document.getElementById('nhietDauPhai').value,
-            nhietGiua1Trai: document.getElementById('nhietGiua1Trai').value,
-            nhietGiua1Phai: document.getElementById('nhietGiua1Phai').value,
-            nhietGiua2Trai: document.getElementById('nhietGiua2Trai').value,
-            nhietGiua2Phai: document.getElementById('nhietGiua2Phai').value,
-            nhietGiua3Trai: document.getElementById('nhietGiua3Trai').value,
-            nhietGiua3Phai: document.getElementById('nhietGiua3Phai').value,
-            nhietCuoiTrai: document.getElementById('nhietCuoiTrai').value,
-            nhietCuoiPhai: document.getElementById('nhietCuoiPhai').value,
+            nhietDauTrai: getElementValue('nhietDauTrai'),
+            nhietDauPhai: getElementValue('nhietDauPhai'),
+            nhietGiua1Trai: getElementValue('nhietGiua1Trai'),
+            nhietGiua1Phai: getElementValue('nhietGiua1Phai'),
+            nhietGiua2Trai: getElementValue('nhietGiua2Trai'),
+            nhietGiua2Phai: getElementValue('nhietGiua2Phai'),
+            nhietGiua3Trai: getElementValue('nhietGiua3Trai'),
+            nhietGiua3Phai: getElementValue('nhietGiua3Phai'),
+            nhietCuoiTrai: getElementValue('nhietCuoiTrai'),
+            nhietCuoiPhai: getElementValue('nhietCuoiPhai'),
             
             // Sensory
-            camQuanCoTinh: document.getElementById('camQuanCoTinh').value,
-            camQuanMau: document.getElementById('camQuanMau').value,
-            camQuanMui: document.getElementById('camQuanMui').value,
-            camQuanVi: document.getElementById('camQuanVi').value
+            camQuanCoTinh: getElementValue('camQuanCoTinh'),
+            camQuanMau: getElementValue('camQuanMau'),
+            camQuanMui: getElementValue('camQuanMui'),
+            camQuanVi: getElementValue('camQuanVi')
         };
         
         return formData;
+    }
+
+    // Helper method to populate form with data (for editing)
+    populateForm(data) {
+        const setElementValue = (id, value) => {
+            const element = document.getElementById(id);
+            if (element && value !== undefined && value !== null) {
+                element.value = value;
+            }
+        };
+        
+        // Basic info
+        setElementValue('site', data.site);
+        setElementValue('maNhanVien', data.maNhanVien);
+        setElementValue('lineSX', data.lineSX);
+        setElementValue('maDKSX', data.maDKSX);
+        
+        // Trigger product parameter loading
+        if (data.maDKSX) {
+            this.loadProductParameters();
+        }
+        
+        // Kansui
+        setElementValue('brixKansui', data.brixKansui);
+        setElementValue('nhietDoKansui', data.nhietDoKansui);
+        setElementValue('ngoaiQuanKansui', data.ngoaiQuanKansui);
+        
+        // Seasoning
+        setElementValue('brixSeasoning', data.brixSeasoning);
+        setElementValue('ngoaiQuanSeasoning', data.ngoaiQuanSeasoning);
+        setElementValue('doDayLaBot', data.doDayLaBot);
+        
+        // Temperature
+        setElementValue('nhietDauTrai', data.nhietDauTrai);
+        setElementValue('nhietDauPhai', data.nhietDauPhai);
+        setElementValue('nhietGiua1Trai', data.nhietGiua1Trai);
+        setElementValue('nhietGiua1Phai', data.nhietGiua1Phai);
+        setElementValue('nhietGiua2Trai', data.nhietGiua2Trai);
+        setElementValue('nhietGiua2Phai', data.nhietGiua2Phai);
+        setElementValue('nhietGiua3Trai', data.nhietGiua3Trai);
+        setElementValue('nhietGiua3Phai', data.nhietGiua3Phai);
+        setElementValue('nhietCuoiTrai', data.nhietCuoiTrai);
+        setElementValue('nhietCuoiPhai', data.nhietCuoiPhai);
+        
+        // Sensory
+        setElementValue('camQuanCoTinh', data.camQuanCoTinh);
+        setElementValue('camQuanMau', data.camQuanMau);
+        setElementValue('camQuanMui', data.camQuanMui);
+        setElementValue('camQuanVi', data.camQuanVi);
     }
 }
 
