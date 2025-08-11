@@ -1,4 +1,4 @@
-// js/sharepoint.js
+// js/sharepoint.js - Development Version (with mock data)
 
 class SharePointManager {
     constructor() {
@@ -6,9 +6,15 @@ class SharePointManager {
         this.processDataListId = null;
         this.processParameterListId = null;
         this.parameters = [];
+        this.isDevelopmentMode = true; // Development flag
     }
 
     async initialize() {
+        if (this.isDevelopmentMode) {
+            console.log('SharePoint Manager: Development mode - using mock data');
+            return true;
+        }
+        
         try {
             console.log('Initializing SharePoint connection...');
             
@@ -24,6 +30,129 @@ class SharePointManager {
             console.error('SharePoint initialization failed:', error);
             throw error;
         }
+    }
+
+    async initializeMock() {
+        console.log('Initializing mock SharePoint data...');
+        
+        // Create mock parameters
+        this.createMockParameters();
+        
+        console.log('Mock SharePoint initialized successfully');
+        return true;
+    }
+
+    createMockParameters() {
+        // Mock parameters data based on FMCG noodle production standards
+        this.parameters = [
+            {
+                id: 'param1',
+                fields: {
+                    'M_x00e3__x0020__x0110_KSX': 'MMB.L1.001',
+                    'T_x00ea_n_x0020_tr_x00ea_n_x00': 'Mì tôm chua cay',
+                    'Brix_x0020_Kansui_x0020_Min': 7.5,
+                    'Brix_x0020_Kansui_x0020_Max': 8.5,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x00': 18,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x000': 25,
+                    'Brix_x0020_Sea_x0020_Min': 15,
+                    'Brix_x0020_Sea_x0020_Max': 25,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x0': 1.2,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x1': 1.8,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_': 160,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_0': 175,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x0': 165,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x00': 180,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x0': 155,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x00': 170
+                }
+            },
+            {
+                id: 'param2',
+                fields: {
+                    'M_x00e3__x0020__x0110_KSX': 'MMB.L2.002',
+                    'T_x00ea_n_x0020_tr_x00ea_n_x00': 'Mì gà nấm hương',
+                    'Brix_x0020_Kansui_x0020_Min': 7.0,
+                    'Brix_x0020_Kansui_x0020_Max': 9.0,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x00': 16,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x000': 28,
+                    'Brix_x0020_Sea_x0020_Min': 12,
+                    'Brix_x0020_Sea_x0020_Max': 22,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x0': 1.0,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x1': 1.6,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_': 158,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_0': 172,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x0': 162,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x00': 178,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x0': 152,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x00': 168
+                }
+            },
+            {
+                id: 'param3',
+                fields: {
+                    'M_x00e3__x0020__x0110_KSX': 'MSI.L3.003',
+                    'T_x00ea_n_x0020_tr_x00ea_n_x00': 'Mì bò hầm',
+                    'Brix_x0020_Kansui_x0020_Min': 8.0,
+                    'Brix_x0020_Kansui_x0020_Max': 9.5,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x00': 20,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x000': 30,
+                    'Brix_x0020_Sea_x0020_Min': 18,
+                    'Brix_x0020_Sea_x0020_Max': 28,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x0': 1.3,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x1': 1.9,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_': 162,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_0': 177,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x0': 167,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x00': 182,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x0': 157,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x00': 172
+                }
+            },
+            {
+                id: 'param4',
+                fields: {
+                    'M_x00e3__x0020__x0110_KSX': 'MHD.L4.004',
+                    'T_x00ea_n_x0020_tr_x00ea_n_x00': 'Mì seafood',
+                    'Brix_x0020_Kansui_x0020_Min': 7.2,
+                    'Brix_x0020_Kansui_x0020_Max': 8.8,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x00': 17,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x000': 27,
+                    'Brix_x0020_Sea_x0020_Min': 14,
+                    'Brix_x0020_Sea_x0020_Max': 24,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x0': 1.1,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x1': 1.7,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_': 159,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_0': 174,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x0': 164,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x00': 179,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x0': 154,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x00': 169
+                }
+            },
+            {
+                id: 'param5',
+                fields: {
+                    'M_x00e3__x0020__x0110_KSX': 'MHG.L5.005',
+                    'T_x00ea_n_x0020_tr_x00ea_n_x00': 'Mì chay nấm',
+                    'Brix_x0020_Kansui_x0020_Min': 6.8,
+                    'Brix_x0020_Kansui_x0020_Max': 8.2,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x00': 15,
+                    'Nhi_x1ec7_t_x0020_Kanshui_x000': 25,
+                    'Brix_x0020_Sea_x0020_Min': 10,
+                    'Brix_x0020_Sea_x0020_Max': 20,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x0': 0.9,
+                    '_x0110__x1ed9__x0020_d_x00e0_y_x1': 1.5,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_': 156,
+                    'Nhi_x1ec7_t_x0020__x0110__x1ea7_0': 171,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x0': 161,
+                    'Nhi_x1ec7_t_x0020_Gi_x1eef_a_x00': 176,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x0': 151,
+                    'Nhi_x1ec7_t_x0020_Cu_x1ed1_i_x00': 166
+                }
+            }
+        ];
+        
+        console.log(`Created ${this.parameters.length} mock parameters`);
     }
 
     async getSiteId() {
@@ -92,6 +221,12 @@ class SharePointManager {
     }
 
     async getParameters() {
+        if (this.isDevelopmentMode) {
+            // Return mock parameters
+            console.log(`Returning ${this.parameters.length} mock parameters`);
+            return this.parameters;
+        }
+        
         try {
             if (!this.processParameterListId) {
                 console.error('Process Parameter list ID not found');
@@ -122,6 +257,11 @@ class SharePointManager {
     }
 
     async createItem(formData) {
+        if (this.isDevelopmentMode) {
+            // Save to localStorage instead of SharePoint
+            return this.saveToLocalStorage(formData);
+        }
+        
         try {
             if (!this.processDataListId) {
                 throw new Error('Process Data list ID not found');
@@ -161,6 +301,45 @@ class SharePointManager {
             }
             
             throw error;
+        }
+    }
+
+    saveToLocalStorage(formData) {
+        try {
+            // Add timestamp and ID
+            formData.timestamp = new Date().toISOString();
+            formData.id = Date.now().toString();
+            
+            // Get existing data
+            let qaProcessData = localStorage.getItem('qaProcessData');
+            qaProcessData = qaProcessData ? JSON.parse(qaProcessData) : [];
+            
+            // Add new record
+            qaProcessData.push(formData);
+            
+            // Keep only last 100 records to avoid localStorage limit
+            if (qaProcessData.length > 100) {
+                qaProcessData = qaProcessData.slice(-100);
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('qaProcessData', JSON.stringify(qaProcessData));
+            
+            console.log('Data saved to localStorage:', formData.id);
+            return { success: true, id: formData.id };
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+            throw error;
+        }
+    }
+
+    getLocalStorageItems() {
+        try {
+            const data = localStorage.getItem('qaProcessData');
+            return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
+        } catch (error) {
+            console.error('Error reading from localStorage:', error);
+            return [];
         }
     }
 
@@ -254,6 +433,11 @@ class SharePointManager {
     }
 
     async getRecentItems(count = 20) {
+        if (this.isDevelopmentMode) {
+            // Return data from localStorage
+            return this.getLocalStorageItems().slice(0, count);
+        }
+        
         try {
             if (!this.processDataListId) {
                 throw new Error('Process Data list ID not found');
@@ -316,6 +500,79 @@ class SharePointManager {
         });
 
         return param ? (param.fields || param) : null;
+    }
+
+    // Development helper methods
+    generateSampleData() {
+        const sampleRecords = [
+            {
+                site: 'MMB',
+                maNhanVien: 'QA001',
+                lineSX: 'L1',
+                maDKSX: 'MMB.L1.001',
+                sanPham: 'Mì tôm chua cay',
+                brixKansui: '8.1',
+                nhietDoKansui: '22',
+                ngoaiQuanKansui: 'Đạt',
+                brixSeasoning: '20',
+                ngoaiQuanSeasoning: 'Đạt',
+                doDayLaBot: '1.5',
+                nhietDauTrai: '168',
+                nhietDauPhai: '170',
+                nhietGiua1Trai: '172',
+                nhietGiua1Phai: '175',
+                nhietGiua2Trai: '170',
+                nhietGiua2Phai: '173',
+                nhietGiua3Trai: '169',
+                nhietGiua3Phai: '171',
+                nhietCuoiTrai: '165',
+                nhietCuoiPhai: '167',
+                camQuanCoTinh: '9.2',
+                camQuanMau: '9.1',
+                camQuanMui: '9.3',
+                camQuanVi: '9.2'
+            },
+            {
+                site: 'MSI',
+                maNhanVien: 'QA002',
+                lineSX: 'L3',
+                maDKSX: 'MSI.L3.003',
+                sanPham: 'Mì bò hầm',
+                brixKansui: '8.7',
+                nhietDoKansui: '24',
+                ngoaiQuanKansui: 'Đạt',
+                brixSeasoning: '23',
+                ngoaiQuanSeasoning: 'Đạt',
+                doDayLaBot: '1.6',
+                nhietDauTrai: '170',
+                nhietDauPhai: '172',
+                nhietGiua1Trai: '175',
+                nhietGiua1Phai: '178',
+                nhietGiua2Trai: '173',
+                nhietGiua2Phai: '176',
+                nhietGiua3Trai: '171',
+                nhietGiua3Phai: '174',
+                nhietCuoiTrai: '167',
+                nhietCuoiPhai: '169',
+                camQuanCoTinh: '9.4',
+                camQuanMau: '9.3',
+                camQuanMui: '9.5',
+                camQuanVi: '9.4'
+            }
+        ];
+        
+        sampleRecords.forEach(record => {
+            this.saveToLocalStorage(record);
+        });
+        
+        console.log('Generated sample data');
+        return sampleRecords.length;
+    }
+
+    clearLocalStorage() {
+        localStorage.removeItem('qaProcessData');
+        localStorage.removeItem('offlineData');
+        console.log('Cleared localStorage');
     }
 }
 
