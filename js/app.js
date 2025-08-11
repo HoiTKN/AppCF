@@ -1,4 +1,4 @@
-// js/app.js - Development Version with Sidebar Navigation
+// js/app.js - Updated for Metal Detection Form
 
 // Main Application Controller
 class App {
@@ -240,9 +240,7 @@ class App {
         const breadcrumbMap = {
             'dashboard': 'Dashboard',
             'process-data': 'Process Data',
-            'raw-material': 'Nguyên liệu đầu vào',
-            'finished-product': 'Thành phẩm',
-            'laboratory': 'Phòng lab',
+            'metal-detection': 'Kiểm soát máy dò kim loại',
             'data-view': 'Xem dữ liệu',
             'analytics': 'Phân tích',
             'parameters': 'Cài đặt thông số'
@@ -265,9 +263,38 @@ class App {
             case 'process-data':
                 // Form is already initialized
                 break;
+            case 'metal-detection':
+                this.initializeMetalDetectionForm();
+                break;
             default:
                 console.log(`Form ${formName} loaded`);
         }
+    }
+
+    initializeMetalDetectionForm() {
+        // Initialize metal detection form with current date/time and new ID
+        const now = new Date();
+        const timestamp = now.getTime().toString(36);
+        const random = Math.random().toString(36).substring(2, 8);
+        
+        const idField = document.getElementById('mdId');
+        if (idField) {
+            idField.value = timestamp + random;
+        }
+        
+        const dateField = document.getElementById('mdNgaySanXuat');
+        if (dateField) {
+            dateField.value = now.toISOString().split('T')[0];
+        }
+        
+        const timeField = document.getElementById('mdGioKiemTra');
+        if (timeField) {
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeField.value = `${hours}:${minutes}`;
+        }
+        
+        console.log('Metal detection form initialized');
     }
 
     toggleSidebar() {
@@ -304,21 +331,48 @@ class App {
 
     updateDashboard() {
         // Update dashboard statistics
-        const items = sharepointManager.getLocalStorageItems();
+        const processItems = sharepointManager.getLocalStorageItems();
+        const metalDetectionItems = this.getMetalDetectionItems();
         
-        // Total records
-        document.getElementById('totalRecords').textContent = items.length;
+        // Total process records
+        document.getElementById('totalRecords').textContent = processItems.length;
         
-        // Today's records
+        // Total metal detection records
+        const metalDetectionElement = document.getElementById('metalDetectionRecords');
+        if (metalDetectionElement) {
+            metalDetectionElement.textContent = metalDetectionItems.length;
+        }
+        
+        // Today's records (both types)
         const today = new Date().toDateString();
-        const todayRecords = items.filter(item => {
+        const todayProcessRecords = processItems.filter(item => {
             const itemDate = new Date(item.timestamp).toDateString();
             return itemDate === today;
         });
-        document.getElementById('todayRecords').textContent = todayRecords.length;
+        const todayMetalRecords = metalDetectionItems.filter(item => {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === today;
+        });
         
-        // Recent records
-        this.updateRecentRecords(items.slice(0, 5));
+        document.getElementById('todayRecords').textContent = todayProcessRecords.length + todayMetalRecords.length;
+        
+        // Recent records (combined)
+        const allRecords = [
+            ...processItems.map(item => ({ ...item, type: 'Process Data' })),
+            ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' }))
+        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        this.updateRecentRecords(allRecords.slice(0, 5));
+    }
+
+    getMetalDetectionItems() {
+        try {
+            const data = localStorage.getItem('qaMetalDetectionData');
+            return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
+        } catch (error) {
+            console.error('Error reading metal detection data from localStorage:', error);
+            return [];
+        }
     }
 
     updateRecentRecords(recentItems) {
@@ -329,20 +383,27 @@ class App {
             return;
         }
         
-        const recordsHtml = recentItems.map(item => {
+        const recordsHtml = recentItems.map((item, index) => {
             const date = new Date(item.timestamp);
             const timeStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            
+            let displayInfo = '';
+            if (item.type === 'Process Data') {
+                displayInfo = `<strong>${item.site} - ${item.lineSX}</strong><br><span class="text-muted">${item.sanPham || '-'}</span>`;
+            } else if (item.type === 'Metal Detection') {
+                displayInfo = `<strong>${item.site} - Line ${item.line}</strong><br><span class="text-muted">Metal Detection</span>`;
+            }
             
             return `
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
                         <small class="text-muted">${timeStr}</small>
                         <br>
-                        <strong>${item.site} - ${item.lineSX}</strong>
+                        ${displayInfo}
                         <br>
-                        <span class="text-muted">${item.sanPham || '-'}</span>
+                        <small class="badge bg-secondary">${item.type}</small>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary" onclick="app.viewItem(${recentItems.indexOf(item)})">
+                    <button class="btn btn-sm btn-outline-primary" onclick="app.viewItem(${index}, '${item.type}')">
                         <i class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -357,19 +418,28 @@ class App {
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>';
             
-            let items = [];
+            let processItems = [];
+            let metalDetectionItems = [];
             
             if (this.isDevelopmentMode) {
                 // Get data from localStorage
-                items = sharepointManager.getLocalStorageItems();
+                processItems = sharepointManager.getLocalStorageItems();
+                metalDetectionItems = this.getMetalDetectionItems();
             } else {
                 // Get recent items from SharePoint
-                items = await sharepointManager.getRecentItems(20);
+                processItems = await sharepointManager.getRecentItems(20);
+                // TODO: Implement SharePoint integration for metal detection
             }
             
-            if (items && items.length > 0) {
+            // Combine and sort by timestamp
+            const allItems = [
+                ...processItems.map(item => ({ ...item, type: 'Process Data' })),
+                ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' }))
+            ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (allItems && allItems.length > 0) {
                 tbody.innerHTML = '';
-                items.forEach((item, index) => {
+                allItems.forEach((item, index) => {
                     const row = this.createDataRow(item, index);
                     tbody.appendChild(row);
                 });
@@ -391,17 +461,28 @@ class App {
             const date = new Date(item.timestamp || new Date());
             const dateStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
             
+            let lineSX = '';
+            let sanPham = '';
+            
+            if (item.type === 'Process Data') {
+                lineSX = item.lineSX || '-';
+                sanPham = item.sanPham || '-';
+            } else if (item.type === 'Metal Detection') {
+                lineSX = `Line ${item.line}` || '-';
+                sanPham = 'Metal Detection';
+            }
+            
             row.innerHTML = `
                 <td>${dateStr}</td>
                 <td>${item.site || '-'}</td>
-                <td>${item.lineSX || '-'}</td>
-                <td>${item.sanPham || '-'}</td>
-                <td>${item.maDKSX || '-'}</td>
+                <td>${lineSX}</td>
+                <td>${item.type}</td>
+                <td>${sanPham}</td>
                 <td>
-                    <button class="btn btn-sm btn-info me-1" onclick="app.viewItem(${index})">
+                    <button class="btn btn-sm btn-info me-1" onclick="app.viewItem(${index}, '${item.type}')">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="app.deleteItem(${index})">
+                    <button class="btn btn-sm btn-danger" onclick="app.deleteItem(${index}, '${item.type}')">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -416,10 +497,10 @@ class App {
                 <td>${dateStr}</td>
                 <td>${fields.Site || '-'}</td>
                 <td>${fields.LineSX || fields.Line_x0020_SX || '-'}</td>
+                <td>${item.type || 'Process Data'}</td>
                 <td>${fields.SanPham || fields.S_x1ea3_n_x0020_ph_x1ea9_m || '-'}</td>
-                <td>${fields.MaDKSX || fields.M_x00e3__x0020__x0110_KSX || '-'}</td>
                 <td>
-                    <button class="btn btn-sm btn-info" onclick="app.viewItem('${item.id}')">
+                    <button class="btn btn-sm btn-info" onclick="app.viewItem('${item.id}', '${item.type}')">
                         <i class="bi bi-eye"></i>
                     </button>
                 </td>
@@ -429,14 +510,22 @@ class App {
         return row;
     }
 
-    async viewItem(itemId) {
+    async viewItem(itemId, itemType) {
         if (this.isDevelopmentMode) {
             // Show item details from localStorage
-            const items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
-            const item = items[itemId];
+            let items, item;
+            
+            if (itemType === 'Process Data') {
+                items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+                item = items[itemId];
+            } else if (itemType === 'Metal Detection') {
+                items = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
+                item = items[itemId];
+            }
+            
             if (item) {
                 const details = JSON.stringify(item, null, 2);
-                alert(`Chi tiết bản ghi:\n\n${details}`);
+                alert(`Chi tiết bản ghi ${itemType}:\n\n${details}`);
             }
         } else {
             // TODO: Implement view item details from SharePoint
@@ -444,11 +533,12 @@ class App {
         }
     }
 
-    async deleteItem(itemIndex) {
-        if (this.isDevelopmentMode && confirm('Bạn có chắc muốn xóa bản ghi này?')) {
-            let items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+    async deleteItem(itemIndex, itemType) {
+        if (this.isDevelopmentMode && confirm(`Bạn có chắc muốn xóa bản ghi ${itemType} này?`)) {
+            let storageKey = itemType === 'Process Data' ? 'qaProcessData' : 'qaMetalDetectionData';
+            let items = JSON.parse(localStorage.getItem(storageKey) || '[]');
             items.splice(itemIndex, 1);
-            localStorage.setItem('qaProcessData', JSON.stringify(items));
+            localStorage.setItem(storageKey, JSON.stringify(items));
             
             // Refresh current view
             if (this.currentForm === 'data-view') {
@@ -513,8 +603,9 @@ class App {
 
     // Development helper methods
     clearAllData() {
-        if (confirm('Xóa toàn bộ dữ liệu development?')) {
+        if (confirm('Xóa toàn bộ dữ liệu development (bao gồm cả Process Data và Metal Detection)?')) {
             localStorage.removeItem('qaProcessData');
+            localStorage.removeItem('qaMetalDetectionData');
             this.showToast('Thành công', 'Đã xóa toàn bộ dữ liệu', 'success');
             
             // Update views
@@ -528,13 +619,21 @@ class App {
     }
 
     exportData() {
-        const data = localStorage.getItem('qaProcessData');
-        if (data) {
-            const blob = new Blob([data], { type: 'application/json' });
+        const processData = localStorage.getItem('qaProcessData');
+        const metalDetectionData = localStorage.getItem('qaMetalDetectionData');
+        
+        const exportData = {
+            processData: processData ? JSON.parse(processData) : [],
+            metalDetectionData: metalDetectionData ? JSON.parse(metalDetectionData) : [],
+            exportDate: new Date().toISOString()
+        };
+        
+        if (exportData.processData.length > 0 || exportData.metalDetectionData.length > 0) {
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'qa_process_data.json';
+            a.download = 'qa_data_export.json';
             a.click();
             URL.revokeObjectURL(url);
         } else {
