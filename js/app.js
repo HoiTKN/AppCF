@@ -1,30 +1,41 @@
-// js/app.js
+// js/app.js - Development Version (bypassing login)
 
 // Main Application Controller
 class App {
     constructor() {
         this.currentView = 'form';
         this.isOffline = false;
+        this.isDevelopmentMode = true; // Development flag
     }
 
     async initialize() {
         try {
-            console.log('Initializing app...');
+            console.log('Initializing app in development mode...');
             
-            // Initialize auth
-            const isAuthenticated = await authManager.initialize();
-            
-            if (isAuthenticated) {
-                console.log('User already authenticated');
+            if (this.isDevelopmentMode) {
+                // Skip authentication in development mode
+                console.log('Development mode: Skipping authentication');
                 await this.showMainApp();
             } else {
-                console.log('User not authenticated, showing login');
-                this.showLoginScreen();
+                // Original authentication flow (for production)
+                const isAuthenticated = await authManager.initialize();
+                
+                if (isAuthenticated) {
+                    console.log('User already authenticated');
+                    await this.showMainApp();
+                } else {
+                    console.log('User not authenticated, showing login');
+                    this.showLoginScreen();
+                }
             }
             
         } catch (error) {
             console.error('App initialization failed:', error);
-            this.showLoginScreen();
+            if (this.isDevelopmentMode) {
+                await this.showMainApp(); // Force show in dev mode
+            } else {
+                this.showLoginScreen();
+            }
         }
     }
 
@@ -66,14 +77,22 @@ class App {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             
-            // Show user info
-            const userInfo = authManager.getUserInfo();
-            if (userInfo) {
-                document.getElementById('userName').textContent = userInfo.name || userInfo.email;
+            if (this.isDevelopmentMode) {
+                // Show development user info
+                document.getElementById('userName').textContent = 'Developer Mode';
+                
+                // Initialize mock SharePoint
+                await sharepointManager.initializeMock();
+            } else {
+                // Show user info
+                const userInfo = authManager.getUserInfo();
+                if (userInfo) {
+                    document.getElementById('userName').textContent = userInfo.name || userInfo.email;
+                }
+                
+                // Initialize SharePoint connection
+                await sharepointManager.initialize();
             }
-            
-            // Initialize SharePoint connection
-            await sharepointManager.initialize();
             
             // Initialize form
             formManager.initialize();
@@ -81,11 +100,11 @@ class App {
             // Setup event listeners
             this.setupEventListeners();
             
-            // Load parameters from SharePoint
+            // Load parameters
             await formManager.loadParameters();
             
-            // Register service worker for PWA
-            if ('serviceWorker' in navigator) {
+            // Register service worker for PWA (only in production)
+            if (!this.isDevelopmentMode && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/AppCF/sw.js').catch(err => {
                     console.log('Service worker registration failed:', err);
                 });
@@ -101,8 +120,14 @@ class App {
         // Logout button
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
-            if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                await authManager.logout();
+            if (this.isDevelopmentMode) {
+                if (confirm('Bạn có chắc muốn reload app?')) {
+                    window.location.reload();
+                }
+            } else {
+                if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                    await authManager.logout();
+                }
             }
         });
         
@@ -133,18 +158,19 @@ class App {
             await formManager.handleSubmit(e);
         });
         
-        // Online/Offline detection
-        window.addEventListener('online', () => {
-            this.isOffline = false;
-            this.showToast('Thông báo', 'Đã kết nối mạng');
-            // Try to sync offline data
-            this.syncOfflineData();
-        });
-        
-        window.addEventListener('offline', () => {
-            this.isOffline = true;
-            this.showToast('Cảnh báo', 'Mất kết nối mạng. Dữ liệu sẽ được lưu offline.');
-        });
+        // Online/Offline detection (disabled in dev mode)
+        if (!this.isDevelopmentMode) {
+            window.addEventListener('online', () => {
+                this.isOffline = false;
+                this.showToast('Thông báo', 'Đã kết nối mạng');
+                this.syncOfflineData();
+            });
+            
+            window.addEventListener('offline', () => {
+                this.isOffline = true;
+                this.showToast('Cảnh báo', 'Mất kết nối mạng. Dữ liệu sẽ được lưu offline.');
+            });
+        }
     }
 
     showFormView() {
@@ -158,7 +184,7 @@ class App {
         document.getElementById('dataSection').style.display = 'block';
         this.currentView = 'data';
         
-        // Load data from SharePoint
+        // Load data from localStorage (dev mode) or SharePoint
         await this.loadDataTable();
     }
 
@@ -167,13 +193,20 @@ class App {
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>';
             
-            // Get recent items from SharePoint
-            const items = await sharepointManager.getRecentItems(20);
+            let items = [];
+            
+            if (this.isDevelopmentMode) {
+                // Get data from localStorage
+                items = sharepointManager.getLocalStorageItems();
+            } else {
+                // Get recent items from SharePoint
+                items = await sharepointManager.getRecentItems(20);
+            }
             
             if (items && items.length > 0) {
                 tbody.innerHTML = '';
-                items.forEach(item => {
-                    const row = this.createDataRow(item);
+                items.forEach((item, index) => {
+                    const row = this.createDataRow(item, index);
                     tbody.appendChild(row);
                 });
             } else {
@@ -186,36 +219,81 @@ class App {
         }
     }
 
-    createDataRow(item) {
+    createDataRow(item, index) {
         const row = document.createElement('tr');
-        const fields = item.fields || item;
         
-        // Format date
-        const date = new Date(fields.Created || fields.NSX);
-        const dateStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
-        
-        row.innerHTML = `
-            <td>${dateStr}</td>
-            <td>${fields.Site || '-'}</td>
-            <td>${fields.LineSX || fields.Line_x0020_SX || '-'}</td>
-            <td>${fields.SanPham || fields.S_x1ea3_n_x0020_ph_x1ea9_m || '-'}</td>
-            <td>${fields.MaDKSX || fields.M_x00e3__x0020__x0110_KSX || '-'}</td>
-            <td>
-                <button class="btn btn-sm btn-info" onclick="app.viewItem('${item.id}')">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </td>
-        `;
+        if (this.isDevelopmentMode) {
+            // Format for localStorage data
+            const date = new Date(item.timestamp || new Date());
+            const dateStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+            
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${item.site || '-'}</td>
+                <td>${item.lineSX || '-'}</td>
+                <td>${item.sanPham || '-'}</td>
+                <td>${item.maDKSX || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="app.viewItem(${index})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="app.deleteItem(${index})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+        } else {
+            // Format for SharePoint data
+            const fields = item.fields || item;
+            const date = new Date(fields.Created || fields.NSX);
+            const dateStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+            
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${fields.Site || '-'}</td>
+                <td>${fields.LineSX || fields.Line_x0020_SX || '-'}</td>
+                <td>${fields.SanPham || fields.S_x1ea3_n_x0020_ph_x1ea9_m || '-'}</td>
+                <td>${fields.MaDKSX || fields.M_x00e3__x0020__x0110_KSX || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="app.viewItem('${item.id}')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            `;
+        }
         
         return row;
     }
 
     async viewItem(itemId) {
-        // TODO: Implement view item details
-        this.showToast('Thông báo', 'Tính năng xem chi tiết đang phát triển');
+        if (this.isDevelopmentMode) {
+            // Show item details from localStorage
+            const items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+            const item = items[itemId];
+            if (item) {
+                const details = JSON.stringify(item, null, 2);
+                alert(`Chi tiết bản ghi:\n\n${details}`);
+            }
+        } else {
+            // TODO: Implement view item details from SharePoint
+            this.showToast('Thông báo', 'Tính năng xem chi tiết đang phát triển');
+        }
+    }
+
+    async deleteItem(itemIndex) {
+        if (this.isDevelopmentMode && confirm('Bạn có chắc muốn xóa bản ghi này?')) {
+            let items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+            items.splice(itemIndex, 1);
+            localStorage.setItem('qaProcessData', JSON.stringify(items));
+            await this.loadDataTable();
+            this.showToast('Thành công', 'Đã xóa bản ghi', 'success');
+        }
     }
 
     async syncOfflineData() {
+        // Only in production mode
+        if (this.isDevelopmentMode) return;
+        
         try {
             const offlineData = localStorage.getItem('offlineData');
             if (offlineData) {
@@ -229,7 +307,6 @@ class App {
                     }
                 }
                 
-                // Clear offline data after successful sync
                 localStorage.removeItem('offlineData');
                 this.showToast('Thành công', 'Đã đồng bộ dữ liệu offline');
             }
@@ -259,6 +336,30 @@ class App {
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
     }
+
+    // Development helper methods
+    clearAllData() {
+        if (confirm('Xóa toàn bộ dữ liệu development?')) {
+            localStorage.removeItem('qaProcessData');
+            this.showToast('Thành công', 'Đã xóa toàn bộ dữ liệu', 'success');
+            this.loadDataTable();
+        }
+    }
+
+    exportData() {
+        const data = localStorage.getItem('qaProcessData');
+        if (data) {
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qa_process_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        } else {
+            this.showToast('Thông báo', 'Không có dữ liệu để export');
+        }
+    }
 }
 
 // Create global app instance
@@ -268,3 +369,13 @@ const app = new App();
 document.addEventListener('DOMContentLoaded', async () => {
     await app.initialize();
 });
+
+// Development helper functions (accessible from console)
+window.devMode = {
+    clearData: () => app.clearAllData(),
+    exportData: () => app.exportData(),
+    switchToProduction: () => {
+        app.isDevelopmentMode = false;
+        window.location.reload();
+    }
+};
