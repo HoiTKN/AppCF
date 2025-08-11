@@ -1,11 +1,12 @@
-// js/app.js - Development Version (bypassing login)
+// js/app.js - Development Version with Sidebar Navigation
 
 // Main Application Controller
 class App {
     constructor() {
-        this.currentView = 'form';
+        this.currentForm = 'process-data';
         this.isOffline = false;
         this.isDevelopmentMode = true; // Development flag
+        this.sidebarCollapsed = false;
     }
 
     async initialize() {
@@ -100,8 +101,14 @@ class App {
             // Setup event listeners
             this.setupEventListeners();
             
+            // Setup sidebar navigation
+            this.setupSidebarNavigation();
+            
             // Load parameters
             await formManager.loadParameters();
+            
+            // Initialize dashboard
+            this.updateDashboard();
             
             // Register service worker for PWA (only in production)
             if (!this.isDevelopmentMode && 'serviceWorker' in navigator) {
@@ -131,18 +138,6 @@ class App {
             }
         });
         
-        // View data button
-        document.getElementById('viewDataBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showDataView();
-        });
-        
-        // Back to form button
-        document.getElementById('backToFormBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showFormView();
-        });
-        
         // Reset form button
         document.getElementById('resetBtn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -158,6 +153,16 @@ class App {
             await formManager.handleSubmit(e);
         });
         
+        // Sidebar toggle for mobile
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            this.toggleSidebar();
+        });
+        
+        // Sidebar overlay for mobile
+        document.getElementById('sidebarOverlay').addEventListener('click', () => {
+            this.hideSidebar();
+        });
+        
         // Online/Offline detection (disabled in dev mode)
         if (!this.isDevelopmentMode) {
             window.addEventListener('online', () => {
@@ -171,21 +176,180 @@ class App {
                 this.showToast('Cảnh báo', 'Mất kết nối mạng. Dữ liệu sẽ được lưu offline.');
             });
         }
-    }
-
-    showFormView() {
-        document.getElementById('formSection').style.display = 'block';
-        document.getElementById('dataSection').style.display = 'none';
-        this.currentView = 'form';
-    }
-
-    async showDataView() {
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('dataSection').style.display = 'block';
-        this.currentView = 'data';
         
-        // Load data from localStorage (dev mode) or SharePoint
-        await this.loadDataTable();
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+    }
+
+    setupSidebarNavigation() {
+        // Setup navigation links
+        const navLinks = document.querySelectorAll('.sidebar .nav-link');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const formName = link.getAttribute('data-form');
+                if (formName) {
+                    this.switchForm(formName);
+                }
+            });
+        });
+        
+        // Set initial active form
+        this.switchForm(this.currentForm);
+    }
+
+    switchForm(formName) {
+        // Update active nav link
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        const activeLink = document.querySelector(`[data-form="${formName}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+        
+        // Hide all form containers
+        document.querySelectorAll('.form-container').forEach(container => {
+            container.classList.remove('active');
+        });
+        
+        // Show selected form
+        const targetForm = document.getElementById(`${formName}-form`);
+        if (targetForm) {
+            targetForm.classList.add('active');
+            this.currentForm = formName;
+            
+            // Update breadcrumb
+            this.updateBreadcrumb(formName);
+            
+            // Handle specific form logic
+            this.handleFormSwitch(formName);
+            
+            // Hide sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                this.hideSidebar();
+            }
+        }
+    }
+
+    updateBreadcrumb(formName) {
+        const breadcrumbMap = {
+            'dashboard': 'Dashboard',
+            'process-data': 'Process Data',
+            'raw-material': 'Nguyên liệu đầu vào',
+            'finished-product': 'Thành phẩm',
+            'laboratory': 'Phòng lab',
+            'data-view': 'Xem dữ liệu',
+            'analytics': 'Phân tích',
+            'parameters': 'Cài đặt thông số'
+        };
+        
+        const breadcrumbElement = document.getElementById('currentFormBreadcrumb');
+        if (breadcrumbElement) {
+            breadcrumbElement.textContent = breadcrumbMap[formName] || formName;
+        }
+    }
+
+    handleFormSwitch(formName) {
+        switch(formName) {
+            case 'dashboard':
+                this.updateDashboard();
+                break;
+            case 'data-view':
+                this.loadDataTable();
+                break;
+            case 'process-data':
+                // Form is already initialized
+                break;
+            default:
+                console.log(`Form ${formName} loaded`);
+        }
+    }
+
+    toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (window.innerWidth <= 768) {
+            // Mobile: toggle show/hide
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        } else {
+            // Desktop: toggle collapse
+            sidebar.classList.toggle('collapsed');
+            document.getElementById('mainContent').classList.toggle('expanded');
+            document.getElementById('topNavbar').classList.toggle('expanded');
+        }
+    }
+
+    hideSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        sidebar.classList.remove('show');
+        overlay.classList.remove('show');
+    }
+
+    handleResize() {
+        if (window.innerWidth > 768) {
+            // Desktop: ensure sidebar is visible and overlay is hidden
+            document.getElementById('sidebar').classList.remove('show');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+    }
+
+    updateDashboard() {
+        // Update dashboard statistics
+        const items = sharepointManager.getLocalStorageItems();
+        
+        // Total records
+        document.getElementById('totalRecords').textContent = items.length;
+        
+        // Today's records
+        const today = new Date().toDateString();
+        const todayRecords = items.filter(item => {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === today;
+        });
+        document.getElementById('todayRecords').textContent = todayRecords.length;
+        
+        // Recent records
+        this.updateRecentRecords(items.slice(0, 5));
+    }
+
+    updateRecentRecords(recentItems) {
+        const container = document.getElementById('recentRecords');
+        
+        if (recentItems.length === 0) {
+            container.innerHTML = '<p class="text-muted">Chưa có dữ liệu</p>';
+            return;
+        }
+        
+        const recordsHtml = recentItems.map(item => {
+            const date = new Date(item.timestamp);
+            const timeStr = date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            
+            return `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <small class="text-muted">${timeStr}</small>
+                        <br>
+                        <strong>${item.site} - ${item.lineSX}</strong>
+                        <br>
+                        <span class="text-muted">${item.sanPham || '-'}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="app.viewItem(${recentItems.indexOf(item)})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = recordsHtml;
     }
 
     async loadDataTable() {
@@ -285,7 +449,17 @@ class App {
             let items = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
             items.splice(itemIndex, 1);
             localStorage.setItem('qaProcessData', JSON.stringify(items));
-            await this.loadDataTable();
+            
+            // Refresh current view
+            if (this.currentForm === 'data-view') {
+                await this.loadDataTable();
+            }
+            
+            // Update dashboard if visible
+            if (this.currentForm === 'dashboard') {
+                this.updateDashboard();
+            }
+            
             this.showToast('Thành công', 'Đã xóa bản ghi', 'success');
         }
     }
@@ -342,7 +516,14 @@ class App {
         if (confirm('Xóa toàn bộ dữ liệu development?')) {
             localStorage.removeItem('qaProcessData');
             this.showToast('Thành công', 'Đã xóa toàn bộ dữ liệu', 'success');
-            this.loadDataTable();
+            
+            // Update views
+            if (this.currentForm === 'data-view') {
+                this.loadDataTable();
+            }
+            if (this.currentForm === 'dashboard') {
+                this.updateDashboard();
+            }
         }
     }
 
@@ -359,6 +540,11 @@ class App {
         } else {
             this.showToast('Thông báo', 'Không có dữ liệu để export');
         }
+    }
+
+    // Public method to refresh dashboard
+    refreshDashboard() {
+        this.updateDashboard();
     }
 }
 
@@ -377,5 +563,6 @@ window.devMode = {
     switchToProduction: () => {
         app.isDevelopmentMode = false;
         window.location.reload();
-    }
+    },
+    switchForm: (formName) => app.switchForm(formName)
 };
