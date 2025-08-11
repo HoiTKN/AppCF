@@ -1,14 +1,20 @@
-// js/auth.js
+// js/auth.js - Development Version (with mock authentication)
 
 class AuthManager {
     constructor() {
         this.msalInstance = null;
         this.account = null;
         this.accessToken = null;
+        this.isDevelopmentMode = true; // Development flag
     }
 
     // Initialize MSAL
     async initialize() {
+        if (this.isDevelopmentMode) {
+            console.log('Auth Manager: Development mode - using mock authentication');
+            return this.initializeMock();
+        }
+        
         try {
             this.msalInstance = new msal.PublicClientApplication(APP_CONFIG.msalConfig);
             await this.msalInstance.initialize();
@@ -28,8 +34,34 @@ class AuthManager {
         }
     }
 
+    initializeMock() {
+        // Create mock account for development
+        this.account = {
+            name: 'Development User',
+            username: 'dev@company.com',
+            localAccountId: 'dev-123',
+            homeAccountId: 'dev-456'
+        };
+        
+        this.accessToken = 'mock-access-token-for-development';
+        
+        // Store mock user info
+        localStorage.setItem('userInfo', JSON.stringify({
+            name: this.account.name,
+            email: this.account.username,
+            id: this.account.localAccountId
+        }));
+        
+        console.log('Mock authentication initialized');
+        return true;
+    }
+
     // Login with popup
     async login() {
+        if (this.isDevelopmentMode) {
+            return this.loginMock();
+        }
+        
         try {
             const loginResponse = await this.msalInstance.loginPopup(APP_CONFIG.loginRequest);
             this.account = loginResponse.account;
@@ -51,8 +83,18 @@ class AuthManager {
         }
     }
 
+    loginMock() {
+        // Simulate login process
+        console.log('Mock login successful');
+        return Promise.resolve(true);
+    }
+
     // Get access token silently
     async getAccessToken() {
+        if (this.isDevelopmentMode) {
+            return this.accessToken;
+        }
+        
         try {
             const tokenRequest = {
                 ...APP_CONFIG.loginRequest,
@@ -79,6 +121,10 @@ class AuthManager {
 
     // Logout
     async logout() {
+        if (this.isDevelopmentMode) {
+            return this.logoutMock();
+        }
+        
         try {
             await this.msalInstance.logoutPopup({
                 postLogoutRedirectUri: window.location.origin
@@ -99,6 +145,18 @@ class AuthManager {
         }
     }
 
+    logoutMock() {
+        // Clear mock session
+        localStorage.removeItem('userInfo');
+        sessionStorage.clear();
+        
+        this.account = null;
+        this.accessToken = null;
+        
+        console.log('Mock logout successful');
+        window.location.reload();
+    }
+
     // Get current user info
     getUserInfo() {
         if (this.account) {
@@ -116,11 +174,23 @@ class AuthManager {
 
     // Check if user is authenticated
     isAuthenticated() {
+        if (this.isDevelopmentMode) {
+            return this.account !== null;
+        }
         return this.account !== null && this.accessToken !== null;
     }
 
     // Get headers for API calls
     getAuthHeaders() {
+        if (this.isDevelopmentMode) {
+            // Return mock headers for development
+            return {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json',
+                'X-Development-Mode': 'true'
+            };
+        }
+        
         return {
             'Authorization': `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json'
@@ -142,6 +212,37 @@ class AuthManager {
         } else {
             alert(message);
         }
+    }
+
+    // Development helper methods
+    switchToProductionMode() {
+        this.isDevelopmentMode = false;
+        console.log('Switched to production mode');
+        // Clear development data
+        this.account = null;
+        this.accessToken = null;
+        localStorage.removeItem('userInfo');
+    }
+
+    switchToDevelopmentMode() {
+        this.isDevelopmentMode = true;
+        console.log('Switched to development mode');
+        this.initializeMock();
+    }
+
+    // Get development status
+    isDeveloper() {
+        return this.isDevelopmentMode;
+    }
+
+    // Mock token refresh for development
+    async refreshToken() {
+        if (this.isDevelopmentMode) {
+            console.log('Mock token refresh');
+            return this.accessToken;
+        }
+        
+        return await this.getAccessToken();
     }
 }
 
