@@ -218,6 +218,82 @@
         .sidebar-toggle:hover {
             color: #0078d4;
         }
+
+        /* Grid selection styles for metal detection */
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .selection-grid .grid-btn:nth-child(8),
+        .selection-grid .grid-btn:nth-child(9),
+        .selection-grid .grid-btn:nth-child(10) {
+            grid-column: span 1;
+        }
+
+        .grid-btn {
+            border: 2px solid #dee2e6;
+            background: white;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-btn:hover {
+            border-color: #0078d4;
+            background: #f0f8ff;
+        }
+
+        .grid-btn.selected {
+            border-color: #0078d4;
+            background: #0078d4;
+            color: white;
+        }
+
+        .grid-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0, 120, 212, 0.25);
+        }
+
+        /* Responsive grid */
+        @media (max-width: 768px) {
+            .selection-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 0.25rem;
+            }
+            
+            .grid-btn {
+                padding: 0.5rem;
+                font-size: 0.875rem;
+                min-height: 40px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .selection-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Input group styling */
+        .input-group .form-control[readonly] {
+            background-color: white;
+        }
+
+        /* File input camera styling */
+        input[type="file"][capture="camera"] {
+            border: 2px dashed #dee2e6;
+            background: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -295,21 +371,9 @@
                         </a>
                     </div>
                     <div class="nav-item">
-                        <a href="#" class="nav-link" data-form="raw-material">
-                            <i class="bi bi-box"></i>
-                            <span>Nguyên liệu đầu vào</span>
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="#" class="nav-link" data-form="finished-product">
-                            <i class="bi bi-check-circle"></i>
-                            <span>Thành phẩm</span>
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="#" class="nav-link" data-form="laboratory">
-                            <i class="bi bi-flask"></i>
-                            <span>Phòng lab</span>
+                        <a href="#" class="nav-link" data-form="metal-detection">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Kiểm soát máy dò kim loại</span>
                         </a>
                     </div>
                 </div>
@@ -406,9 +470,9 @@
                             <div class="col-md-3 mb-3">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                                        <h5 class="card-title mt-2">5</h5>
-                                        <p class="card-text text-muted">Sản phẩm active</p>
+                                        <i class="bi bi-shield-check text-success" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2" id="metalDetectionRecords">0</h5>
+                                        <p class="card-text text-muted">Metal Detection</p>
                                     </div>
                                 </div>
                             </div>
@@ -444,6 +508,10 @@
                                             <button class="btn btn-primary" onclick="app.switchForm('process-data')">
                                                 <i class="bi bi-plus-circle me-2"></i>
                                                 Nhập Process Data mới
+                                            </button>
+                                            <button class="btn btn-outline-primary" onclick="app.switchForm('metal-detection')">
+                                                <i class="bi bi-shield-check me-2"></i>
+                                                Kiểm soát máy dò kim loại
                                             </button>
                                             <button class="btn btn-outline-primary" onclick="app.switchForm('data-view')">
                                                 <i class="bi bi-table me-2"></i>
@@ -707,566 +775,190 @@
                     </div>
                 </div>
                 
-                <!-- Metal Detection Form Container - Insert vào main content area -->
-<div class="form-container" id="metal-detection-form" style="display: none;">
-    <div class="container-fluid py-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-shield-check me-2"></i>
-                    Kiểm soát kim loại Form
-                </h5>
-            </div>
-            <div class="card-body">
-                <form id="metalDetectionForm">
-                    <!-- Basic Information -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">ID <span class="text-primary">*</span></label>
-                            <input type="text" class="form-control" id="mdId" readonly style="background-color: #f8f9fa;">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Site</label>
-                            <select class="form-select" id="mdSite" required>
-                                <option value="">Chọn site...</option>
-                                <option value="MMB">MMB</option>
-                                <option value="MSI">MSI</option>
-                                <option value="MHD">MHD</option>
-                                <option value="MHG">MHG</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Mã nhân viên QA</label>
-                            <input type="text" class="form-control" id="mdMaNhanVien" placeholder="VD: 25MB03590">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày sản xuất</label>
-                            <input type="date" class="form-control" id="mdNgaySanXuat">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Giờ kiểm tra</label>
-                            <input type="time" class="form-control" id="mdGioKiemTra">
-                        </div>
-                    </div>
-
-                    <!-- Unit through detector -->
-                    <div class="mb-4">
-                        <label class="form-label">Đơn vị qua máy dò</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="donViQuaMayDo" id="mdGoi" value="Gói">
-                                    <label class="form-check-label" for="mdGoi">Gói</label>
-                                </div>
+                <!-- Metal Detection Form -->
+                <div class="form-container" id="metal-detection-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    Kiểm soát máy dò kim loại
+                                </h5>
                             </div>
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="donViQuaMayDo" id="mdThung" value="Thùng">
-                                    <label class="form-check-label" for="mdThung">Thùng</label>
-                                </div>
+                            <div class="card-body">
+                                <form id="metalDetectionForm">
+                                    <!-- Basic Information -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">ID <span class="text-primary">*</span></label>
+                                            <input type="text" class="form-control" id="mdId" readonly style="background-color: #f8f9fa;">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Site <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="mdSite" required>
+                                                <option value="">Chọn site...</option>
+                                                <option value="MMB">MMB</option>
+                                                <option value="MSI">MSI</option>
+                                                <option value="MHD">MHD</option>
+                                                <option value="MHG">MHG</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Mã nhân viên QA</label>
+                                            <input type="text" class="form-control" id="mdMaNhanVien" placeholder="VD: 25MB03590">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ngày sản xuất</label>
+                                            <input type="date" class="form-control" id="mdNgaySanXuat">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Giờ kiểm tra</label>
+                                            <input type="time" class="form-control" id="mdGioKiemTra">
+                                        </div>
+                                    </div>
+
+                                    <!-- Unit through detector -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Đơn vị qua máy dò</label>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="donViQuaMayDo" id="mdGoi" value="Gói">
+                                                    <label class="form-check-label" for="mdGoi">Gói</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="donViQuaMayDo" id="mdThung" value="Thùng">
+                                                    <label class="form-check-label" for="mdThung">Thùng</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Line Selection -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Line</label>
+                                        <div class="selection-grid" id="lineGrid">
+                                            <button type="button" class="grid-btn" data-value="1">1</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
+                                            <button type="button" class="grid-btn" data-value="8">8</button>
+                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                        </div>
+                                        <input type="hidden" id="mdLine" name="line">
+                                    </div>
+
+                                    <!-- Magnetic contamination setting -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Người nhiễm từ cài đặt <span class="text-primary">*</span></label>
+                                            <div class="input-group">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguoiNhiemTu', -0.01)">-</button>
+                                                <input type="number" class="form-control text-center" id="mdNguoiNhiemTu" value="0.00" step="0.01" readonly>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguoiNhiemTu', 0.01)">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label">Lý do thay đổi người cài đặt (nếu có thay đổi)</label>
+                                        <textarea class="form-control" id="mdLyDoThayDoi" rows="3" placeholder="Nhập lý do nếu có thay đổi..."></textarea>
+                                    </div>
+
+                                    <!-- Fe Standards Testing -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kiểm tra mẫu chuẩn Fe</h6>
+                                    
+                                    <!-- Fe 1.5 -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Số mẫu chuẩn Fe 1.5 máy dò bắt được</label>
+                                        <div class="selection-grid" id="fe15Grid">
+                                            <button type="button" class="grid-btn" data-value="1">1</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
+                                            <button type="button" class="grid-btn" data-value="8">8</button>
+                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                            <button type="button" class="grid-btn" data-value="10">10</button>
+                                        </div>
+                                        <input type="hidden" id="mdFe15" name="fe15">
+                                    </div>
+
+                                    <!-- Fe 2.0 -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Số mẫu chuẩn Fe 2.0 máy dò bắt được</label>
+                                        <div class="selection-grid reverse-order" id="fe20Grid">
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="1">1</button>
+                                            <button type="button" class="grid-btn" data-value="10">10</button>
+                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                            <button type="button" class="grid-btn" data-value="8">8</button>
+                                        </div>
+                                        <input type="hidden" id="mdFe20" name="fe20">
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-secondary" id="mdCancelBtn">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Line Selection -->
-                    <div class="mb-4">
-                        <label class="form-label">Line</label>
-                        <div class="selection-grid" id="lineGrid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                        </div>
-                        <input type="hidden" id="mdLine" name="line">
-                    </div>
-
-                    <!-- Magnetic contamination setting -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Người nhiễm từ cài đặt <span class="text-primary">*</span></label>
-                            <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguoiNhiemTu', -0.01)">-</button>
-                                <input type="number" class="form-control text-center" id="mdNguoiNhiemTu" value="0.00" step="0.01" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguoiNhiemTu', 0.01)">+</button>
+                </div>
+                
+                <!-- Data View Form -->
+                <div class="form-container" id="data-view-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-table me-2"></i>
+                                    Xem dữ liệu đã nhập
+                                </h5>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">Lý do thay đổi người cài đặt (nếu có thay đổi)</label>
-                        <textarea class="form-control" id="mdLyDoThayDoi" rows="3" placeholder="Nhập lý do nếu có thay đổi..."></textarea>
-                    </div>
-
-                    <!-- Fe Standards Testing -->
-                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kiểm tra mẫu chuẩn Fe</h6>
-                    
-                    <!-- Fe 1.5 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Fe 1.5 máy dò bắt được</label>
-                        <div class="selection-grid" id="fe15Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdFe15" name="fe15">
-                    </div>
-
-                    <!-- Fe 2.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Fe 2.0 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="fe20Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdFe20" name="fe20">
-                    </div>
-
-                    <!-- Fe 2.5 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Fe 2.5 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="fe25Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdFe25" name="fe25">
-                    </div>
-
-                    <!-- Fe 3.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Fe 3.0 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="fe30Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdFe30" name="fe30">
-                    </div>
-
-                    <!-- Inox Standards Testing -->
-                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kiểm tra mẫu chuẩn Inox</h6>
-                    
-                    <!-- Inox 1.5 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Inox 1.5 máy dò bắt được</label>
-                        <div class="selection-grid" id="inox15Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdInox15" name="inox15">
-                    </div>
-
-                    <!-- Inox 2.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Inox 2.0 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="inox20Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdInox20" name="inox20">
-                    </div>
-
-                    <!-- Inox 3.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Inox 3.0 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="inox30Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdInox30" name="inox30">
-                    </div>
-
-                    <!-- Inox 4.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn Inox 4.0 máy dò bắt được</label>
-                        <div class="selection-grid" id="inox40Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdInox40" name="inox40">
-                    </div>
-
-                    <!-- Non-ferrous metal testing -->
-                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kiểm tra kim loại màu</h6>
-                    
-                    <!-- Metal color 2.5 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn kim loại màu 2.5 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="metal25Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdMetal25" name="metal25">
-                    </div>
-
-                    <!-- Metal color 3.0 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn kim loại màu 3.0 máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="metal30Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdMetal30" name="metal30">
-                    </div>
-
-                    <!-- Metal color 3.5 -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu chuẩn kim loại màu 3.5 máy dò bắt được</label>
-                        <div class="selection-grid" id="metal35Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdMetal35" name="metal35">
-                    </div>
-
-                    <!-- Wire testing -->
-                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kiểm tra gia lạp (Wire)</h6>
-                    
-                    <!-- Wire 3mm -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu gia lạp 3mm máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="wire3Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdWire3" name="wire3">
-                    </div>
-
-                    <!-- Wire 7mm -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu gia lạp 7mm máy dò bắt được</label>
-                        <div class="selection-grid reverse-order" id="wire7Grid">
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                        </div>
-                        <input type="hidden" id="mdWire7" name="wire7">
-                    </div>
-
-                    <!-- Wire 12mm -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu gia lạp 12mm máy dò bắt được</label>
-                        <div class="selection-grid" id="wire12Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdWire12" name="wire12">
-                    </div>
-
-                    <!-- Wire 15mm -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu gia lạp 15mm máy dò bắt được</label>
-                        <div class="selection-grid" id="wire15Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdWire15" name="wire15">
-                    </div>
-
-                    <!-- Wire 20mm -->
-                    <div class="mb-4">
-                        <label class="form-label">Số mẫu gia lạp 20mm máy dò bắt được</label>
-                        <div class="selection-grid" id="wire20Grid">
-                            <button type="button" class="grid-btn" data-value="1">1</button>
-                            <button type="button" class="grid-btn" data-value="2">2</button>
-                            <button type="button" class="grid-btn" data-value="3">3</button>
-                            <button type="button" class="grid-btn" data-value="4">4</button>
-                            <button type="button" class="grid-btn" data-value="5">5</button>
-                            <button type="button" class="grid-btn" data-value="6">6</button>
-                            <button type="button" class="grid-btn" data-value="7">7</button>
-                            <button type="button" class="grid-btn" data-value="8">8</button>
-                            <button type="button" class="grid-btn" data-value="9">9</button>
-                            <button type="button" class="grid-btn" data-value="10">10</button>
-                        </div>
-                        <input type="hidden" id="mdWire20" name="wire20">
-                    </div>
-
-                    <!-- Test Results -->
-                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kết quả test</h6>
-                    
-                    <!-- Test conclusion -->
-                    <div class="mb-4">
-                        <label class="form-label">Kết luận test máy (Đ/KĐ)</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="ketLuanTest" id="mdDat" value="Đ">
-                                    <label class="form-check-label" for="mdDat">Đ</label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="ketLuanTest" id="mdKhongDat" value="KĐ">
-                                    <label class="form-check-label" for="mdKhongDat">KĐ</label>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Thời gian</th>
+                                                <th>Site</th>
+                                                <th>Line</th>
+                                                <th>Loại</th>
+                                                <th>Sản phẩm</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dataTableBody">
+                                            <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Detection counts -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Số lượng được máy dò đá/loại ra</label>
-                            <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdSoLuongDa', -1)">-</button>
-                                <input type="number" class="form-control text-center" id="mdSoLuongDa" value="0" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdSoLuongDa', 1)">+</button>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Số lượng được máy phát hiện đúng (có kim loại)</label>
-                            <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdSoLuongDung', -1)">-</button>
-                                <input type="number" class="form-control text-center" id="mdSoLuongDung" value="0" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdSoLuongDung', 1)">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Metal description -->
-                    <div class="mb-4">
-                        <label class="form-label">Mô tả kim loại nếu có kim loại</label>
-                        <textarea class="form-control" id="mdMoTaKimLoai" rows="3" placeholder="Mô tả chi tiết kim loại được phát hiện..."></textarea>
-                    </div>
-
-                    <!-- Contamination source -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nguồn nhiễm từ của mẫu có kim loại</label>
-                            <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguonNhiem', -1)">-</button>
-                                <input type="number" class="form-control text-center" id="mdNguonNhiem" value="0" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="adjustNumber('mdNguonNhiem', 1)">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Image upload -->
-                    <div class="mb-4">
-                        <label class="form-label">Hình ảnh mẫu kim loại</label>
-                        <div class="border rounded p-4 text-center">
-                            <i class="bi bi-camera display-4 text-muted mb-3"></i>
-                            <p class="text-muted">Chụp ảnh mẫu kim loại</p>
-                            <input type="file" class="form-control" id="mdHinhAnh" accept="image/*" capture="camera">
-                        </div>
-                    </div>
-
-                    <!-- Submit Buttons -->
-                    <div class="d-flex gap-2 justify-content-end">
-                        <button type="button" class="btn btn-secondary" id="mdCancelBtn">
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            Save
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-/* Grid selection styles */
-.selection-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.selection-grid .grid-btn:nth-child(8),
-.selection-grid .grid-btn:nth-child(9),
-.selection-grid .grid-btn:nth-child(10) {
-    grid-column: span 1;
-}
-
-.grid-btn {
-    border: 2px solid #dee2e6;
-    background: white;
-    padding: 0.75rem;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    min-height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.grid-btn:hover {
-    border-color: #0078d4;
-    background: #f0f8ff;
-}
-
-.grid-btn.selected {
-    border-color: #0078d4;
-    background: #0078d4;
-    color: white;
-}
-
-.grid-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 120, 212, 0.25);
-}
-
-/* Responsive grid */
-@media (max-width: 768px) {
-    .selection-grid {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 0.25rem;
-    }
-    
-    .grid-btn {
-        padding: 0.5rem;
-        font-size: 0.875rem;
-        min-height: 40px;
-    }
-}
-
-@media (max-width: 576px) {
-    .selection-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-
-/* Input group styling */
-.input-group .form-control[readonly] {
-    background-color: white;
-}
-
-/* File input camera styling */
-input[type="file"][capture="camera"] {
-    border: 2px dashed #dee2e6;
-    background: #f8f9fa;
-}
-</style>
+                </div>
                 
                 <div class="form-container" id="analytics-form">
                     <div class="container-fluid py-4">
@@ -1322,6 +1014,177 @@ input[type="file"][capture="camera"] {
     <script src="js/auth.js"></script>
     <script src="js/sharepoint.js"></script>
     <script src="js/form.js"></script>
+    <script src="js/metal-detection.js"></script>
     <script src="js/app.js"></script>
+
+    <script>
+    // Global function for number input adjustment (called from metal detection form)
+    window.adjustNumber = function(inputId, delta) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = currentValue + delta;
+            
+            // Ensure non-negative values
+            newValue = Math.max(0, newValue);
+            
+            // Format based on input type
+            if (inputId === 'mdNguoiNhiemTu') {
+                input.value = newValue.toFixed(2);
+            } else {
+                input.value = Math.round(newValue);
+            }
+            
+            // Trigger input event for validation
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    // Initialize metal detection form when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup grid button listeners for metal detection form
+        function setupMetalDetectionGrids() {
+            const gridContainers = ['lineGrid', 'fe15Grid', 'fe20Grid'];
+            
+            gridContainers.forEach(gridId => {
+                const grid = document.getElementById(gridId);
+                if (grid) {
+                    const buttons = grid.querySelectorAll('.grid-btn');
+                    buttons.forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            // Remove selected class from all buttons in this grid
+                            buttons.forEach(b => b.classList.remove('selected'));
+                            
+                            // Add selected class to clicked button
+                            this.classList.add('selected');
+                            
+                            // Update corresponding hidden input
+                            const value = this.getAttribute('data-value');
+                            const hiddenInputMap = {
+                                'lineGrid': 'mdLine',
+                                'fe15Grid': 'mdFe15',
+                                'fe20Grid': 'mdFe20'
+                            };
+                            
+                            const inputId = hiddenInputMap[gridId];
+                            if (inputId) {
+                                const input = document.getElementById(inputId);
+                                if (input) {
+                                    input.value = value;
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        // Setup metal detection form submit
+        function setupMetalDetectionForm() {
+            const form = document.getElementById('metalDetectionForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Collect form data
+                    const formData = {
+                        id: document.getElementById('mdId').value,
+                        site: document.getElementById('mdSite').value,
+                        maNhanVien: document.getElementById('mdMaNhanVien').value,
+                        ngaySanXuat: document.getElementById('mdNgaySanXuat').value,
+                        gioKiemTra: document.getElementById('mdGioKiemTra').value,
+                        donViQuaMayDo: document.querySelector('input[name="donViQuaMayDo"]:checked')?.value || '',
+                        line: document.getElementById('mdLine').value,
+                        nguoiNhiemTu: document.getElementById('mdNguoiNhiemTu').value,
+                        lyDoThayDoi: document.getElementById('mdLyDoThayDoi').value,
+                        fe15: document.getElementById('mdFe15').value,
+                        fe20: document.getElementById('mdFe20').value,
+                        timestamp: new Date().toISOString(),
+                        formType: 'metal-detection'
+                    };
+                    
+                    // Save to localStorage
+                    let metalDetectionData = localStorage.getItem('qaMetalDetectionData');
+                    metalDetectionData = metalDetectionData ? JSON.parse(metalDetectionData) : [];
+                    metalDetectionData.push(formData);
+                    localStorage.setItem('qaMetalDetectionData', JSON.stringify(metalDetectionData));
+                    
+                    // Show success message
+                    if (typeof app !== 'undefined') {
+                        app.showToast('Thành công', 'Dữ liệu kiểm soát kim loại đã được lưu!', 'success');
+                        app.refreshDashboard?.();
+                    }
+                    
+                    // Reset form
+                    form.reset();
+                    document.querySelectorAll('.grid-btn.selected').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                    
+                    // Reset date and time
+                    const now = new Date();
+                    document.getElementById('mdNgaySanXuat').value = now.toISOString().split('T')[0];
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    document.getElementById('mdGioKiemTra').value = `${hours}:${minutes}`;
+                    
+                    // Generate new ID
+                    const timestamp = now.getTime().toString(36);
+                    const random = Math.random().toString(36).substring(2, 8);
+                    document.getElementById('mdId').value = timestamp + random;
+                });
+            }
+        }
+
+        // Setup cancel button
+        function setupMetalDetectionCancel() {
+            const cancelBtn = document.getElementById('mdCancelBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    if (confirm('Bạn có chắc muốn hủy và xóa toàn bộ dữ liệu đã nhập?')) {
+                        const form = document.getElementById('metalDetectionForm');
+                        if (form) {
+                            form.reset();
+                            document.querySelectorAll('.grid-btn.selected').forEach(btn => {
+                                btn.classList.remove('selected');
+                            });
+                        }
+                        if (typeof app !== 'undefined') {
+                            app.showToast('Thông báo', 'Đã hủy và làm mới form', 'info');
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize all metal detection features
+        setupMetalDetectionGrids();
+        setupMetalDetectionForm();
+        setupMetalDetectionCancel();
+        
+        // Generate initial ID and set current date/time for metal detection form
+        const now = new Date();
+        const timestamp = now.getTime().toString(36);
+        const random = Math.random().toString(36).substring(2, 8);
+        const idField = document.getElementById('mdId');
+        if (idField) {
+            idField.value = timestamp + random;
+        }
+        
+        const dateField = document.getElementById('mdNgaySanXuat');
+        if (dateField) {
+            dateField.value = now.toISOString().split('T')[0];
+        }
+        
+        const timeField = document.getElementById('mdGioKiemTra');
+        if (timeField) {
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeField.value = `${hours}:${minutes}`;
+        }
+    });
+    </script>
 </body>
 </html>
