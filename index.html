@@ -19,17 +19,222 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* Development mode indicators */
+        .dev-indicator {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            color: white;
+            padding: 5px 15px;
+            font-size: 0.8rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 35px; /* Account for dev indicator */
+            left: 0;
+            height: calc(100vh - 35px);
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+        
+        .sidebar-header {
+            padding: 1rem;
+            background: #0078d4;
+            color: white;
+        }
+        
+        .sidebar-nav {
+            padding: 0;
+        }
+        
+        .nav-section {
+            margin-bottom: 1rem;
+        }
+        
+        .nav-section-title {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .nav-item {
+            margin: 0;
+        }
+        
+        .nav-link {
+            padding: 0.75rem 1rem;
+            color: #495057;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            background: #e9ecef;
+            color: #0078d4;
+        }
+        
+        .nav-link.active {
+            background: #0078d4;
+            color: white;
+            border-right: 3px solid #0056b3;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+        
+        /* Main content with sidebar */
+        .main-content {
+            margin-left: 280px;
+            margin-top: 35px; /* Account for dev indicator */
+            transition: margin-left 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 0;
+        }
+        
+        /* Top navbar */
+        .top-navbar {
+            position: fixed;
+            top: 35px; /* Account for dev indicator */
+            left: 280px;
+            right: 0;
+            height: 60px;
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            z-index: 999;
+            transition: left 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+        }
+        
+        .top-navbar.expanded {
+            left: 0;
+        }
+        
+        .content-area {
+            padding-top: 60px; /* Account for top navbar */
+            min-height: calc(100vh - 95px);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .top-navbar {
+                left: 0;
+            }
+            
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+                display: none;
+            }
+            
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+        
+        /* Form container */
+        .form-container {
+            display: none;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb-container {
+            background: #f8f9fa;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .dev-tools {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        
+        .dev-tools .btn {
+            margin: 2px;
+            font-size: 0.8rem;
+        }
+        
+        /* Sidebar toggle button */
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #495057;
+            cursor: pointer;
+        }
+        
+        .sidebar-toggle:hover {
+            color: #0078d4;
+        }
+    </style>
 </head>
 <body>
+    <!-- Development Mode Indicator -->
+    <div class="dev-indicator">
+        <strong>🚧 DEVELOPMENT MODE</strong> - Mock data được sử dụng | No SharePoint connection
+    </div>
+
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Đang tải ứng dụng...</p>
+        <p class="mt-3">Đang tải ứng dụng (Development Mode)...</p>
     </div>
 
-    <!-- Login Screen -->
+    <!-- Login Screen (Hidden in dev mode) -->
     <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="container">
             <div class="row justify-content-center align-items-center min-vh-100">
@@ -54,302 +259,574 @@
 
     <!-- Main App -->
     <div id="mainApp" style="display: none;">
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h6 class="mb-0">
                     <i class="bi bi-clipboard-data me-2"></i>
-                    QA Process Data
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
+                    QA System <small class="badge bg-danger ms-2">DEV</small>
+                </h6>
+                <small class="opacity-75">Quality Assurance Management</small>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Dashboard Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Dashboard</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="dashboard">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Tổng quan</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Data Entry Forms -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Nhập dữ liệu</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link active" data-form="process-data">
+                            <i class="bi bi-clipboard-data"></i>
+                            <span>Process Data</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="raw-material">
+                            <i class="bi bi-box"></i>
+                            <span>Nguyên liệu đầu vào</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="finished-product">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Thành phẩm</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="laboratory">
+                            <i class="bi bi-flask"></i>
+                            <span>Phòng lab</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Reports -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Báo cáo</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="data-view">
+                            <i class="bi bi-table"></i>
+                            <span>Xem dữ liệu</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="analytics">
+                            <i class="bi bi-graph-up"></i>
+                            <span>Phân tích</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Settings -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Cài đặt</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="parameters">
+                            <i class="bi bi-gear"></i>
+                            <span>Thông số</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Top Navbar -->
+        <div class="top-navbar" id="topNavbar">
+            <button class="sidebar-toggle d-md-none" id="sidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <div class="ms-auto d-flex align-items-center">
+                <span class="text-muted me-3">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <span id="userName">Developer Mode</span>
+                </span>
+                <button class="btn btn-outline-secondary btn-sm" id="logoutBtn">
+                    <i class="bi bi-box-arrow-right me-1"></i> Reload
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="viewDataBtn">
-                                <i class="bi bi-table me-1"></i> Xem dữ liệu
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <span class="nav-link" id="userInfo">
-                                <i class="bi bi-person-circle me-1"></i>
-                                <span id="userName">Loading...</span>
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="logoutBtn">
-                                <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
-        </nav>
-
-        <!-- Main Content -->
-        <div class="container-fluid py-3">
-            <!-- Form Section -->
-            <div id="formSection">
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-pencil-square me-2"></i>
-                            Nhập dữ liệu kiểm tra
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="processDataForm">
-                            <!-- Basic Information -->
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Site <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="site" required>
-                                        <option value="">Chọn site...</option>
-                                        <option value="MMB">MMB</option>
-                                        <option value="MSI">MSI</option>
-                                        <option value="MHD">MHD</option>
-                                        <option value="MHG">MHG</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Mã nhân viên QA <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="maNhanVien" required>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Line SX <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="lineSX" required>
-                                        <option value="">Chọn line...</option>
-                                        <option value="L1">L1</option>
-                                        <option value="L2">L2</option>
-                                        <option value="L3">L3</option>
-                                        <option value="L4">L4</option>
-                                        <option value="L5">L5</option>
-                                        <option value="L6">L6</option>
-                                        <option value="L7">L7</option>
-                                        <option value="L8">L8</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Mã ĐKSX <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="maDKSX" required>
-                                        <option value="">Chọn mã ĐKSX...</option>
-                                    </select>
-                                    <small class="text-muted">Sản phẩm: <span id="productName">-</span></small>
-                                </div>
-                            </div>
-
-                            <!-- Kansui Section -->
-                            <h6 class="border-bottom pb-2 mb-3">Thông số Kansui</h6>
-                            <div class="row mb-3">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Brix Kansui</label>
-                                    <input type="number" class="form-control" id="brixKansui" step="0.1" min="0">
-                                    <small class="text-muted">Range: <span id="brixKansuiRange">-</span></small>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Nhiệt độ Kansui (°C)</label>
-                                    <input type="number" class="form-control" id="nhietDoKansui" step="0.1" min="0">
-                                    <small class="text-muted">Range: <span id="nhietKansuiRange">-</span></small>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Ngoại quan Kansui</label>
-                                    <select class="form-select" id="ngoaiQuanKansui">
-                                        <option value="">Chọn...</option>
-                                        <option value="Đạt">Đạt</option>
-                                        <option value="Không đạt">Không đạt</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Seasoning Section -->
-                            <h6 class="border-bottom pb-2 mb-3">Thông số Seasoning</h6>
-                            <div class="row mb-3">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Brix Seasoning</label>
-                                    <input type="number" class="form-control" id="brixSeasoning" step="0.1" min="0">
-                                    <small class="text-muted">Range: <span id="brixSeaRange">-</span></small>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Ngoại quan Seasoning</label>
-                                    <select class="form-select" id="ngoaiQuanSeasoning">
-                                        <option value="">Chọn...</option>
-                                        <option value="Đạt">Đạt</option>
-                                        <option value="Không đạt">Không đạt</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Độ dày lá bột (lô tinh)</label>
-                                    <input type="number" class="form-control" id="doDayLaBot" step="0.01" min="0">
-                                    <small class="text-muted">Range: <span id="doDayRange">-</span></small>
-                                </div>
-                            </div>
-
-                            <!-- Temperature Section -->
-                            <h6 class="border-bottom pb-2 mb-3">Nhiệt độ chiên</h6>
-                            <div class="row mb-3">
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Đầu trái</label>
-                                    <input type="number" class="form-control" id="nhietDauTrai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Đầu phải</label>
-                                    <input type="number" class="form-control" id="nhietDauPhai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 1 trái</label>
-                                    <input type="number" class="form-control" id="nhietGiua1Trai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 1 phải</label>
-                                    <input type="number" class="form-control" id="nhietGiua1Phai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 2 trái</label>
-                                    <input type="number" class="form-control" id="nhietGiua2Trai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 2 phải</label>
-                                    <input type="number" class="form-control" id="nhietGiua2Phai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 3 trái</label>
-                                    <input type="number" class="form-control" id="nhietGiua3Trai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Giữa 3 phải</label>
-                                    <input type="number" class="form-control" id="nhietGiua3Phai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Cuối trái</label>
-                                    <input type="number" class="form-control" id="nhietCuoiTrai" step="0.1">
-                                </div>
-                                <div class="col-6 col-md-3 mb-3">
-                                    <label class="form-label">Cuối phải</label>
-                                    <input type="number" class="form-control" id="nhietCuoiPhai" step="0.1">
-                                </div>
-                            </div>
-
-                            <!-- Sensory Evaluation -->
-                            <h6 class="border-bottom pb-2 mb-3">Đánh giá cảm quan</h6>
-                            <div class="row mb-3">
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Cơ tính sợi</label>
-                                    <select class="form-select" id="camQuanCoTinh">
-                                        <option value="">Chọn...</option>
-                                        <option value="8.9">8.9</option>
-                                        <option value="9.0">9.0</option>
-                                        <option value="9.1">9.1</option>
-                                        <option value="9.2">9.2</option>
-                                        <option value="9.3">9.3</option>
-                                        <option value="9.4">9.4</option>
-                                        <option value="9.5">9.5</option>
-                                        <option value="9.6">9.6</option>
-                                        <option value="9.7">9.7</option>
-                                        <option value="9.8">9.8</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Màu sắc</label>
-                                    <select class="form-select" id="camQuanMau">
-                                        <option value="">Chọn...</option>
-                                        <option value="8.9">8.9</option>
-                                        <option value="9.0">9.0</option>
-                                        <option value="9.1">9.1</option>
-                                        <option value="9.2">9.2</option>
-                                        <option value="9.3">9.3</option>
-                                        <option value="9.4">9.4</option>
-                                        <option value="9.5">9.5</option>
-                                        <option value="9.6">9.6</option>
-                                        <option value="9.7">9.7</option>
-                                        <option value="9.8">9.8</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Mùi</label>
-                                    <select class="form-select" id="camQuanMui">
-                                        <option value="">Chọn...</option>
-                                        <option value="8.9">8.9</option>
-                                        <option value="9.0">9.0</option>
-                                        <option value="9.1">9.1</option>
-                                        <option value="9.2">9.2</option>
-                                        <option value="9.3">9.3</option>
-                                        <option value="9.4">9.4</option>
-                                        <option value="9.5">9.5</option>
-                                        <option value="9.6">9.6</option>
-                                        <option value="9.7">9.7</option>
-                                        <option value="9.8">9.8</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Vị</label>
-                                    <select class="form-select" id="camQuanVi">
-                                        <option value="">Chọn...</option>
-                                        <option value="8.9">8.9</option>
-                                        <option value="9.0">9.0</option>
-                                        <option value="9.1">9.1</option>
-                                        <option value="9.2">9.2</option>
-                                        <option value="9.3">9.3</option>
-                                        <option value="9.4">9.4</option>
-                                        <option value="9.5">9.5</option>
-                                        <option value="9.6">9.6</option>
-                                        <option value="9.7">9.7</option>
-                                        <option value="9.8">9.8</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Submit Buttons -->
-                            <div class="d-flex gap-2 justify-content-end">
-                                <button type="button" class="btn btn-secondary" id="resetBtn">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>Làm mới
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-save me-2"></i>Lưu dữ liệu
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content" id="mainContent">
+            <div class="content-area">
+                
+                <!-- Breadcrumb -->
+                <div class="breadcrumb-container">
+                    <nav>
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <i class="bi bi-house me-1"></i>
+                                <a href="#">Home</a>
+                            </li>
+                            <li class="breadcrumb-item active" id="currentFormBreadcrumb">Process Data</li>
+                        </ol>
+                    </nav>
                 </div>
-            </div>
-
-            <!-- Data View Section (Hidden by default) -->
-            <div id="dataSection" style="display: none;">
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-table me-2"></i>
-                                Dữ liệu đã nhập
-                            </h5>
-                            <button class="btn btn-primary btn-sm" id="backToFormBtn">
-                                <i class="bi bi-plus-circle me-1"></i>Nhập mới
-                            </button>
+                
+                <!-- Form Containers -->
+                
+                <!-- Dashboard Form -->
+                <div class="form-container" id="dashboard-form">
+                    <div class="container-fluid py-4">
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 class="mb-4">
+                                    <i class="bi bi-speedometer2 me-2"></i>
+                                    Dashboard - Tổng quan hệ thống QA
+                                </h4>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover" id="dataTable">
-                                <thead>
-                                    <tr>
-                                        <th>Thời gian</th>
-                                        <th>Site</th>
-                                        <th>Line</th>
-                                        <th>Sản phẩm</th>
-                                        <th>Mã ĐKSX</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dataTableBody">
-                                    <!-- Data will be loaded here -->
-                                </tbody>
-                            </table>
+                        
+                        <!-- Stats Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="bi bi-clipboard-data text-primary" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2" id="totalRecords">0</h5>
+                                        <p class="card-text text-muted">Process Records</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2">5</h5>
+                                        <p class="card-text text-muted">Sản phẩm active</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="bi bi-building text-info" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2">4</h5>
+                                        <p class="card-text text-muted">Sites</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2" id="todayRecords">0</h5>
+                                        <p class="card-text text-muted">Records hôm nay</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Quick Actions</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" onclick="app.switchForm('process-data')">
+                                                <i class="bi bi-plus-circle me-2"></i>
+                                                Nhập Process Data mới
+                                            </button>
+                                            <button class="btn btn-outline-primary" onclick="app.switchForm('data-view')">
+                                                <i class="bi bi-table me-2"></i>
+                                                Xem dữ liệu đã nhập
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Dữ liệu gần đây</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="recentRecords">
+                                            <p class="text-muted">Đang tải...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Process Data Form -->
+                <div class="form-container active" id="process-data-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-pencil-square me-2"></i>
+                                    Nhập dữ liệu kiểm tra Process
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="processDataForm">
+                                    <!-- Basic Information -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Site <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="site" required>
+                                                <option value="">Chọn site...</option>
+                                                <option value="MMB">MMB</option>
+                                                <option value="MSI">MSI</option>
+                                                <option value="MHD">MHD</option>
+                                                <option value="MHG">MHG</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Mã nhân viên QA <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="maNhanVien" required placeholder="VD: QA001">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Line SX <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="lineSX" required>
+                                                <option value="">Chọn line...</option>
+                                                <option value="L1">L1</option>
+                                                <option value="L2">L2</option>
+                                                <option value="L3">L3</option>
+                                                <option value="L4">L4</option>
+                                                <option value="L5">L5</option>
+                                                <option value="L6">L6</option>
+                                                <option value="L7">L7</option>
+                                                <option value="L8">L8</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Mã ĐKSX <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="maDKSX" required>
+                                                <option value="">Chọn mã ĐKSX...</option>
+                                            </select>
+                                            <small class="text-muted">Sản phẩm: <span id="productName">-</span></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Kansui Section -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">
+                                        <i class="bi bi-droplet me-2"></i>Thông số Kansui
+                                    </h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Brix Kansui</label>
+                                            <input type="number" class="form-control" id="brixKansui" step="0.1" min="0" placeholder="VD: 8.2">
+                                            <small class="text-muted">Range: <span id="brixKansuiRange">-</span></small>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Nhiệt độ Kansui (°C)</label>
+                                            <input type="number" class="form-control" id="nhietDoKansui" step="0.1" min="0" placeholder="VD: 22.5">
+                                            <small class="text-muted">Range: <span id="nhietKansuiRange">-</span></small>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ngoại quan Kansui</label>
+                                            <select class="form-select" id="ngoaiQuanKansui">
+                                                <option value="">Chọn...</option>
+                                                <option value="Đạt">Đạt</option>
+                                                <option value="Không đạt">Không đạt</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Seasoning Section -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">
+                                        <i class="bi bi-cup-hot me-2"></i>Thông số Seasoning
+                                    </h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Brix Seasoning</label>
+                                            <input type="number" class="form-control" id="brixSeasoning" step="0.1" min="0" placeholder="VD: 20.5">
+                                            <small class="text-muted">Range: <span id="brixSeaRange">-</span></small>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ngoại quan Seasoning</label>
+                                            <select class="form-select" id="ngoaiQuanSeasoning">
+                                                <option value="">Chọn...</option>
+                                                <option value="Đạt">Đạt</option>
+                                                <option value="Không đạt">Không đạt</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Độ dày lá bột (mm)</label>
+                                            <input type="number" class="form-control" id="doDayLaBot" step="0.01" min="0" placeholder="VD: 1.5">
+                                            <small class="text-muted">Range: <span id="doDayRange">-</span></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Temperature Section -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">
+                                        <i class="bi bi-thermometer-half me-2"></i>Nhiệt độ chiên (°C)
+                                    </h6>
+                                    <div class="row mb-3">
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Đầu trái</label>
+                                            <input type="number" class="form-control" id="nhietDauTrai" step="0.1" placeholder="168">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Đầu phải</label>
+                                            <input type="number" class="form-control" id="nhietDauPhai" step="0.1" placeholder="170">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 1 trái</label>
+                                            <input type="number" class="form-control" id="nhietGiua1Trai" step="0.1" placeholder="172">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 1 phải</label>
+                                            <input type="number" class="form-control" id="nhietGiua1Phai" step="0.1" placeholder="175">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 2 trái</label>
+                                            <input type="number" class="form-control" id="nhietGiua2Trai" step="0.1" placeholder="170">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 2 phải</label>
+                                            <input type="number" class="form-control" id="nhietGiua2Phai" step="0.1" placeholder="173">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 3 trái</label>
+                                            <input type="number" class="form-control" id="nhietGiua3Trai" step="0.1" placeholder="169">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Giữa 3 phải</label>
+                                            <input type="number" class="form-control" id="nhietGiua3Phai" step="0.1" placeholder="171">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Cuối trái</label>
+                                            <input type="number" class="form-control" id="nhietCuoiTrai" step="0.1" placeholder="165">
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <label class="form-label">Cuối phải</label>
+                                            <input type="number" class="form-control" id="nhietCuoiPhai" step="0.1" placeholder="167">
+                                        </div>
+                                    </div>
+
+                                    <!-- Sensory Evaluation -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">
+                                        <i class="bi bi-star me-2"></i>Đánh giá cảm quan
+                                    </h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Cơ tính sợi</label>
+                                            <select class="form-select" id="camQuanCoTinh">
+                                                <option value="">Chọn...</option>
+                                                <option value="8.9">8.9</option>
+                                                <option value="9.0">9.0</option>
+                                                <option value="9.1">9.1</option>
+                                                <option value="9.2">9.2</option>
+                                                <option value="9.3">9.3</option>
+                                                <option value="9.4">9.4</option>
+                                                <option value="9.5">9.5</option>
+                                                <option value="9.6">9.6</option>
+                                                <option value="9.7">9.7</option>
+                                                <option value="9.8">9.8</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Màu sắc</label>
+                                            <select class="form-select" id="camQuanMau">
+                                                <option value="">Chọn...</option>
+                                                <option value="8.9">8.9</option>
+                                                <option value="9.0">9.0</option>
+                                                <option value="9.1">9.1</option>
+                                                <option value="9.2">9.2</option>
+                                                <option value="9.3">9.3</option>
+                                                <option value="9.4">9.4</option>
+                                                <option value="9.5">9.5</option>
+                                                <option value="9.6">9.6</option>
+                                                <option value="9.7">9.7</option>
+                                                <option value="9.8">9.8</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Mùi</label>
+                                            <select class="form-select" id="camQuanMui">
+                                                <option value="">Chọn...</option>
+                                                <option value="8.9">8.9</option>
+                                                <option value="9.0">9.0</option>
+                                                <option value="9.1">9.1</option>
+                                                <option value="9.2">9.2</option>
+                                                <option value="9.3">9.3</option>
+                                                <option value="9.4">9.4</option>
+                                                <option value="9.5">9.5</option>
+                                                <option value="9.6">9.6</option>
+                                                <option value="9.7">9.7</option>
+                                                <option value="9.8">9.8</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Vị</label>
+                                            <select class="form-select" id="camQuanVi">
+                                                <option value="">Chọn...</option>
+                                                <option value="8.9">8.9</option>
+                                                <option value="9.0">9.0</option>
+                                                <option value="9.1">9.1</option>
+                                                <option value="9.2">9.2</option>
+                                                <option value="9.3">9.3</option>
+                                                <option value="9.4">9.4</option>
+                                                <option value="9.5">9.5</option>
+                                                <option value="9.6">9.6</option>
+                                                <option value="9.7">9.7</option>
+                                                <option value="9.8">9.8</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-secondary" id="resetBtn">
+                                            <i class="bi bi-arrow-clockwise me-2"></i>Làm mới
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-save me-2"></i>Lưu dữ liệu
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data View Form -->
+                <div class="form-container" id="data-view-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-table me-2"></i>
+                                        Dữ liệu đã nhập
+                                    </h5>
+                                    <div>
+                                        <button class="btn btn-outline-primary btn-sm me-2" onclick="sharepointManager.generateSampleData(); app.loadDataTable();">
+                                            <i class="bi bi-plus-circle me-1"></i>Tạo dữ liệu mẫu
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="app.switchForm('process-data')">
+                                            <i class="bi bi-plus-circle me-1"></i>Nhập mới
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="dataTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Thời gian</th>
+                                                <th>Site</th>
+                                                <th>Line</th>
+                                                <th>Sản phẩm</th>
+                                                <th>Mã ĐKSX</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dataTableBody">
+                                            <!-- Data will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Raw Material Form -->
+                <div class="form-container" id="raw-material-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-box me-2"></i>
+                                    Kiểm tra nguyên liệu đầu vào
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Form kiểm tra nguyên liệu đầu vào sẽ được phát triển trong các phiên bản tiếp theo.
+                                </div>
+                                
+                                <h6 class="mb-3">Các mục kiểm tra sẽ bao gồm:</h6>
+                                <ul class="list-group">
+                                    <li class="list-group-item">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        Kiểm tra chất lượng bột mì
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        Kiểm tra độ ẩm nguyên liệu
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        Kiểm tra chất phụ gia
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        Kiểm tra bao bì
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other form placeholders would go here -->
+                <div class="form-container" id="finished-product-form">
+                    <div class="container-fluid py-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Form kiểm tra thành phẩm - đang phát triển
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-container" id="laboratory-form">
+                    <div class="container-fluid py-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Form phòng lab - đang phát triển
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-container" id="analytics-form">
+                    <div class="container-fluid py-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Module phân tích dữ liệu - đang phát triển
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-container" id="parameters-form">
+                    <div class="container-fluid py-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Cài đặt thông số hệ thống - đang phát triển
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </div>
@@ -367,9 +844,21 @@
         </div>
     </div>
 
+    <!-- Development Tools -->
+    <div class="dev-tools">
+        <button class="btn btn-sm btn-outline-danger" onclick="devMode.clearData()" title="Clear All Data">
+            <i class="bi bi-trash"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-info" onclick="devMode.exportData()" title="Export Data">
+            <i class="bi bi-download"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-success" onclick="sharepointManager.generateSampleData()" title="Generate Sample Data">
+            <i class="bi bi-plus-square"></i>
+        </button>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sharepoint.js"></script>
