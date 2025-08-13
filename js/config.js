@@ -79,12 +79,12 @@ const APP_CONFIG = {
 
 // Validation rules (will be loaded from SharePoint)
 const VALIDATION_RULES = {
-    brixKansui: { min: 7.0, max: 10.0 },
-    nhietKansui: { min: 15, max: 30 },
-    brixSeasoning: { min: 0, max: 50 },
-    doDayLaBot: { min: 0.5, max: 2.0 },
-    nhietDau: { min: 140, max: 180 },
-    nhietGiua: { min: 140, max: 180 },
+    brixKansui: { min: 3.5, max: 10.0 },
+    nhietKansui: { min: 5, max: 20 },
+    brixSeasoning: { min: 0, max: 6 },
+    doDayLaBot: { min: 0.8, max: 1.3 },
+    nhietDau: { min: 110, max: 155 },
+    nhietGiua: { min: 130, max: 180 },
     nhietCuoi: { min: 140, max: 180 }
 };
 
