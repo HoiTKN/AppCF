@@ -219,18 +219,12 @@
             color: #0078d4;
         }
 
-        /* Grid selection styles for metal detection */
+        /* Grid selection styles for forms */
         .selection-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 0.5rem;
             margin-bottom: 1rem;
-        }
-
-        .selection-grid .grid-btn:nth-child(8),
-        .selection-grid .grid-btn:nth-child(9),
-        .selection-grid .grid-btn:nth-child(10) {
-            grid-column: span 1;
         }
 
         .grid-btn {
@@ -293,6 +287,26 @@
         input[type="file"][capture="camera"] {
             border: 2px dashed #dee2e6;
             background: #f8f9fa;
+        }
+
+        /* Conditional fields initially hidden */
+        .conditional-fields {
+            display: none;
+        }
+
+        /* Radio group styling */
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        @media (max-width: 576px) {
+            .radio-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -380,6 +394,12 @@
                         <a href="#" class="nav-link" data-form="daily-hygiene">
                             <i class="bi bi-droplet-half"></i>
                             <span>Đánh giá vệ sinh hàng ngày</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-form="product-changeover">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>Checklist chuyển đổi sản phẩm</span>
                         </a>
                     </div>
                 </div>
@@ -485,18 +505,18 @@
                             <div class="col-md-3 mb-3">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <i class="bi bi-building text-info" style="font-size: 2rem;"></i>
-                                        <h5 class="card-title mt-2">4</h5>
-                                        <p class="card-text text-muted">Sites</p>
+                                        <i class="bi bi-droplet-half text-info" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2" id="dailyHygieneRecords">0</h5>
+                                        <p class="card-text text-muted">Daily Hygiene</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
-                                        <h5 class="card-title mt-2" id="todayRecords">0</h5>
-                                        <p class="card-text text-muted">Records hôm nay</p>
+                                        <i class="bi bi-arrow-repeat text-warning" style="font-size: 2rem;"></i>
+                                        <h5 class="card-title mt-2" id="productChangeoverRecords">0</h5>
+                                        <p class="card-text text-muted">Product Changeover</p>
                                     </div>
                                 </div>
                             </div>
@@ -519,9 +539,13 @@
                                                 <i class="bi bi-shield-check me-2"></i>
                                                 Kiểm soát máy dò kim loại
                                             </button>
-                                            <button class="btn btn-outline-primary" onclick="app.switchForm('data-view')">
-                                                <i class="bi bi-table me-2"></i>
-                                                Xem dữ liệu đã nhập
+                                            <button class="btn btn-outline-primary" onclick="app.switchForm('daily-hygiene')">
+                                                <i class="bi bi-droplet-half me-2"></i>
+                                                Đánh giá vệ sinh hàng ngày
+                                            </button>
+                                            <button class="btn btn-outline-primary" onclick="app.switchForm('product-changeover')">
+                                                <i class="bi bi-arrow-repeat me-2"></i>
+                                                Checklist chuyển đổi sản phẩm
                                             </button>
                                         </div>
                                     </div>
@@ -857,7 +881,7 @@
                                             <button type="button" class="grid-btn" data-value="6">6</button>
                                             <button type="button" class="grid-btn" data-value="7">7</button>
                                             <button type="button" class="grid-btn" data-value="8">8</button>
-                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                            <button type="button" class="grid-btn" data-value="Phố">Phố</button>
                                         </div>
                                         <input type="hidden" id="mdLine" name="line">
                                     </div>
@@ -903,17 +927,17 @@
                                     <!-- Fe 2.0 -->
                                     <div class="mb-4">
                                         <label class="form-label">Số mẫu chuẩn Fe 2.0 máy dò bắt được</label>
-                                        <div class="selection-grid reverse-order" id="fe20Grid">
-                                            <button type="button" class="grid-btn" data-value="7">7</button>
-                                            <button type="button" class="grid-btn" data-value="6">6</button>
-                                            <button type="button" class="grid-btn" data-value="5">5</button>
-                                            <button type="button" class="grid-btn" data-value="4">4</button>
-                                            <button type="button" class="grid-btn" data-value="3">3</button>
-                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                        <div class="selection-grid" id="fe20Grid">
                                             <button type="button" class="grid-btn" data-value="1">1</button>
-                                            <button type="button" class="grid-btn" data-value="10">10</button>
-                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
                                             <button type="button" class="grid-btn" data-value="8">8</button>
+                                            <button type="button" class="grid-btn" data-value="9">9</button>
+                                            <button type="button" class="grid-btn" data-value="10">10</button>
                                         </div>
                                         <input type="hidden" id="mdFe20" name="fe20">
                                     </div>
@@ -921,6 +945,628 @@
                                     <!-- Submit Buttons -->
                                     <div class="d-flex gap-2 justify-content-end">
                                         <button type="button" class="btn btn-secondary" id="mdCancelBtn">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Hygiene Form -->
+                <div class="form-container" id="daily-hygiene-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-droplet-half me-2"></i>
+                                    Đánh giá vệ sinh hàng ngày
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="dailyHygieneForm">
+                                    <!-- Basic Information -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">ID <span class="text-primary">*</span></label>
+                                            <input type="text" class="form-control" id="dhId" readonly style="background-color: #f8f9fa;">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Site <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="dhSite" required>
+                                                <option value="">Chọn site...</option>
+                                                <option value="MMB">MMB</option>
+                                                <option value="MSI">MSI</option>
+                                                <option value="MHD">MHD</option>
+                                                <option value="MHG">MHG</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Khu vực/xưởng SX <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="dhKhuVuc" required>
+                                                <option value="">Chọn khu vực...</option>
+                                                <option value="Khu A">Khu A</option>
+                                                <option value="Khu B">Khu B</option>
+                                                <option value="Khu C">Khu C</option>
+                                                <option value="Phân xưởng 1">Phân xưởng 1</option>
+                                                <option value="Phân xưởng 2">Phân xưởng 2</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ngày <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control" id="dhNgay" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ca SX</label>
+                                            <div class="selection-grid" id="dhCaSXGrid">
+                                                <button type="button" class="grid-btn" data-value="1">1</button>
+                                                <button type="button" class="grid-btn" data-value="2">2</button>
+                                                <button type="button" class="grid-btn" data-value="3">3</button>
+                                                <button type="button" class="grid-btn" data-value="14">14</button>
+                                                <button type="button" class="grid-btn" data-value="34">34</button>
+                                            </div>
+                                            <input type="hidden" id="dhCaSX" name="caSX">
+                                        </div>
+                                    </div>
+
+                                    <!-- Line Selection -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Line</label>
+                                        <div class="selection-grid" id="dhLineGrid">
+                                            <button type="button" class="grid-btn" data-value="1">1</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
+                                            <button type="button" class="grid-btn" data-value="8">8</button>
+                                            <button type="button" class="grid-btn" data-value="Phố">Phố</button>
+                                        </div>
+                                        <input type="hidden" id="dhLine" name="line">
+                                    </div>
+
+                                    <!-- Assessment Questions -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">Câu hỏi đánh giá</h6>
+                                    
+                                    <!-- Question 1 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Công nhân tuân thủ BHLD (đồng phục, giày/dép, mũ, khẩu trang)</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBHLD" id="dhBHLD_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhBHLD_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBHLD" id="dhBHLD_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhBHLD_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 2 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Công nhân không đeo mông tay dài, không deo trang sức, nhẫn vào phòng bao gói (trừ nhẫn cưới không hạt)</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhongDeoTrangSuc" id="dhKhongDeoTrangSuc_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKhongDeoTrangSuc_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhongDeoTrangSuc" id="dhKhongDeoTrangSuc_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKhongDeoTrangSuc_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 3 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Công nhân trong phòng BG đảm bảo xịt cồn tay 2h/lần</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhXitConTay" id="dhXitConTay_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhXitConTay_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhXitConTay" id="dhXitConTay_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhXitConTay_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 4 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Nền phòng BG sạch sẽ, không có phôi mi, gia vị, OPP rơi xuống nền</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhNenPhongBG" id="dhNenPhongBG_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhNenPhongBG_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhNenPhongBG" id="dhNenPhongBG_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhNenPhongBG_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 5 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Không có NVL, BTP khác loại hoặc không đạt chất lượng tại KV sản xuất</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhongCoNVL" id="dhKhongCoNVL_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKhongCoNVL_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhongCoNVL" id="dhKhongCoNVL_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKhongCoNVL_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 6 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Cửa ra vào có rèm chắn côn trùng, rèm được vệ sinh sạch sẽ</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhCuaRaVao" id="dhCuaRaVao_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhCuaRaVao_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhCuaRaVao" id="dhCuaRaVao_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhCuaRaVao_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 7 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Đèn bắt côn trùng hoạt động bình thường</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhDenBatConTrung" id="dhDenBatConTrung_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhDenBatConTrung_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhDenBatConTrung" id="dhDenBatConTrung_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhDenBatConTrung_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 8 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Tường, trần nhà sạch sẽ, không bụi bẩn, mạng nhện</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhTuongTran" id="dhTuongTran_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhTuongTran_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhTuongTran" id="dhTuongTran_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhTuongTran_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 9 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Băng chuyền, máy móc thiết bị được vệ sinh sạch sẽ</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBangChuyenMayMoc" id="dhBangChuyenMayMoc_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhBangChuyenMayMoc_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBangChuyenMayMoc" id="dhBangChuyenMayMoc_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhBangChuyenMayMoc_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 10 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Pallet dùng trong phòng BG là pallet nhựa, được vệ sinh sạch sẽ</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhPalletNhua" id="dhPalletNhua_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhPalletNhua_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhPalletNhua" id="dhPalletNhua_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhPalletNhua_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 11 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Công cụ dụng cụ sử dụng đúng mục đích, được vệ sinh sạch sẽ, để đúng layout quy định</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhCongCuDungCu" id="dhCongCuDungCu_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhCongCuDungCu_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhCongCuDungCu" id="dhCongCuDungCu_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhCongCuDungCu_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 12 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Khay nhựa trong phòng BG phải sạch sẽ, khô ráo, để đúng nơi quy định</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhayNhua" id="dhKhayNhua_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKhayNhua_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhayNhua" id="dhKhayNhua_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKhayNhua_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 13 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">BTP, TP phải chứa đúng màu khay để nhận dạng hàng lỗi, hàng cần kiểm tra</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBTPTP" id="dhBTPTP_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhBTPTP_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhBTPTP" id="dhBTPTP_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhBTPTP_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 14 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Khay chứa phôi phải được lót bao PE khi khay chống đổi</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhayPE" id="dhKhayPE_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKhayPE_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKhayPE" id="dhKhayPE_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKhayPE_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 15 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Hệ thống phun keo sạch sẽ, không có mùi lạ</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhHeThongPhun" id="dhHeThongPhun_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhHeThongPhun_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhHeThongPhun" id="dhHeThongPhun_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhHeThongPhun_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 16 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">KV cấp gia vị sạch sẽ, NVL để đúng layout quy định, không có NVL khác loại hoặc không đạt tại vị trí sản xuất</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKVGiaVi" id="dhKVGiaVi_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKVGiaVi_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKVGiaVi" id="dhKVGiaVi_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKVGiaVi_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 17 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">KV thành phẩm sạch sẽ, gọn gàng. Thành phẩm đạt và hàng KPH để đúng layout vị trí, nhãn dạng hàng KPH riêng</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKVThanhPham" id="dhKVThanhPham_Dat" value="Đạt">
+                                                <label class="form-check-label" for="dhKVThanhPham_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKVThanhPham" id="dhKVThanhPham_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="dhKVThanhPham_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Overall Conclusion -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">Kết luận</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Kết luận chung <span class="text-danger">*</span></label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKetLuanChung" id="dhKetLuanChung_Dat" value="Đạt" required>
+                                                <label class="form-check-label" for="dhKetLuanChung_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="dhKetLuanChung" id="dhKetLuanChung_KhongDat" value="Không đạt" required>
+                                                <label class="form-check-label" for="dhKetLuanChung_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Conditional fields for "Không đạt" -->
+                                    <div id="dhConditionalFields" class="conditional-fields">
+                                        <h6 class="border-bottom pb-2 mb-3 text-warning">Thông tin chi tiết khi không đạt</h6>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Mô tả nếu không đạt <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="dhMoTaKhongDat" rows="3" placeholder="Mô tả chi tiết những điểm không đạt..."></textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Hình ảnh không đạt (1)</label>
+                                            <input type="file" class="form-control" id="dhHinhAnhKhongDat1" accept="image/*" capture="camera">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Hình ảnh không đạt (2)</label>
+                                            <input type="file" class="form-control" id="dhHinhAnhKhongDat2" accept="image/*" capture="camera">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Hành động khắc phục</label>
+                                            <textarea class="form-control" id="dhHanhDongKhacPhuc" rows="3" placeholder="Mô tả hành động khắc phục đã thực hiện..."></textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Hình ảnh đạt sau khắc phục (1)</label>
+                                            <input type="file" class="form-control" id="dhHinhAnhDat1" accept="image/*" capture="camera">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Hình ảnh đạt sau khắc phục (2)</label>
+                                            <input type="file" class="form-control" id="dhHinhAnhDat2" accept="image/*" capture="camera">
+                                        </div>
+                                    </div>
+
+                                    <!-- QA Assessment -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">Thông tin QA</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">QA đánh giá</label>
+                                            <input type="text" class="form-control" id="dhQADanhGia" placeholder="Tên người QA đánh giá">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Đeo bao tay đầu ca</label>
+                                            <div class="radio-group">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="dhDeoTayDauCa" id="dhDeoTayDauCa_N" value="N">
+                                                    <label class="form-check-label" for="dhDeoTayDauCa_N">N</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="dhDeoTayDauCa" id="dhDeoTayDauCa_Y" value="Y">
+                                                    <label class="form-check-label" for="dhDeoTayDauCa_Y">Y</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Tình trạng bao tay cuối ca</label>
+                                            <div class="radio-group">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="dhTinhTrangTayCuoiCa" id="dhTinhTrangTayCuoiCa_N" value="N">
+                                                    <label class="form-check-label" for="dhTinhTrangTayCuoiCa_N">N</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="dhTinhTrangTayCuoiCa" id="dhTinhTrangTayCuoiCa_Y" value="Y">
+                                                    <label class="form-check-label" for="dhTinhTrangTayCuoiCa_Y">Y</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-secondary" id="dhCancelBtn">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Changeover Form -->
+                <div class="form-container" id="product-changeover-form">
+                    <div class="container-fluid py-4">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-arrow-repeat me-2"></i>
+                                    Checklist chuyển đổi sản phẩm
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="productChangeoverForm">
+                                    <!-- Basic Information -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">ID <span class="text-primary">*</span></label>
+                                            <input type="text" class="form-control" id="pcId" readonly style="background-color: #f8f9fa;">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Site <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="pcSite" required>
+                                                <option value="">Chọn site...</option>
+                                                <option value="MMB">MMB</option>
+                                                <option value="MSI">MSI</option>
+                                                <option value="MHD">MHD</option>
+                                                <option value="MHG">MHG</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Ngày Sản Xuất <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control" id="pcNgaySanXuat" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Giờ</label>
+                                            <input type="time" class="form-control" id="pcGio">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="pcTenSanPham" placeholder="VD: Mì tôm chua cay" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Item</label>
+                                            <input type="text" class="form-control" id="pcItem" placeholder="Mã item sản phẩm">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Người thực hiện</label>
+                                            <input type="text" class="form-control" id="pcNguoiThucHien" placeholder="Tên người thực hiện">
+                                        </div>
+                                    </div>
+
+                                    <!-- Line Selection -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Line</label>
+                                        <div class="selection-grid" id="pcLineGrid">
+                                            <button type="button" class="grid-btn" data-value="1">1</button>
+                                            <button type="button" class="grid-btn" data-value="2">2</button>
+                                            <button type="button" class="grid-btn" data-value="3">3</button>
+                                            <button type="button" class="grid-btn" data-value="4">4</button>
+                                            <button type="button" class="grid-btn" data-value="5">5</button>
+                                            <button type="button" class="grid-btn" data-value="6">6</button>
+                                            <button type="button" class="grid-btn" data-value="7">7</button>
+                                            <button type="button" class="grid-btn" data-value="8">8</button>
+                                            <button type="button" class="grid-btn" data-value="Phố">Phố</button>
+                                        </div>
+                                        <input type="hidden" id="pcLine" name="line">
+                                    </div>
+
+                                    <!-- Checklist Items -->
+                                    <h6 class="border-bottom pb-2 mb-3 text-primary">Checklist Items</h6>
+                                    
+                                    <!-- Item 1 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Dọn và Di Chuyển BTP Đóng Gói</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcDonDiChuyenBTP" id="pcDonDiChuyenBTP_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcDonDiChuyenBTP_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcDonDiChuyenBTP" id="pcDonDiChuyenBTP_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcDonDiChuyenBTP_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item 2 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Dọn và Di chuyển BTP khu nối liệu</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcDonDiChuyenNoiLieu" id="pcDonDiChuyenNoiLieu_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcDonDiChuyenNoiLieu_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcDonDiChuyenNoiLieu" id="pcDonDiChuyenNoiLieu_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcDonDiChuyenNoiLieu_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item 3 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Vệ Sinh Băng Tải</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhBangTai" id="pcVeSinhBangTai_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcVeSinhBangTai_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhBangTai" id="pcVeSinhBangTai_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcVeSinhBangTai_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item 4 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Vệ Sinh Máy Dispencer</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhMayDispencer" id="pcVeSinhMayDispencer_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcVeSinhMayDispencer_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhMayDispencer" id="pcVeSinhMayDispencer_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcVeSinhMayDispencer_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item 5 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Vệ Sinh cụm rung rau</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhCumRungRau" id="pcVeSinhCumRungRau_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcVeSinhCumRungRau_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhCumRungRau" id="pcVeSinhCumRungRau_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcVeSinhCumRungRau_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item 6 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Vệ sinh khuôn ly, tô</label>
+                                        <div class="radio-group">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhKhuonLy" id="pcVeSinhKhuonLy_Dat" value="Đạt">
+                                                <label class="form-check-label" for="pcVeSinhKhuonLy_Dat">Đạt</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pcVeSinhKhuonLy" id="pcVeSinhKhuonLy_KhongDat" value="Không đạt">
+                                                <label class="form-check-label" for="pcVeSinhKhuonLy_KhongDat">Không đạt</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Additional Notes -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Ghi chú</label>
+                                        <textarea class="form-control" id="pcGhiChu" rows="3" placeholder="Ghi chú thêm nếu có..."></textarea>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-secondary" id="pcCancelBtn">
                                             Cancel
                                         </button>
                                         <button type="submit" class="btn btn-primary">
@@ -1021,6 +1667,8 @@
     <script src="js/sharepoint.js"></script>
     <script src="js/form.js"></script>
     <script src="js/metal-detection.js"></script>
+    <script src="js/daily-hygiene.js"></script>
+    <script src="js/product-changeover.js"></script>
     <script src="js/app.js"></script>
 
     <script>
@@ -1046,7 +1694,7 @@
         }
     };
 
-    // Initialize metal detection form when DOM is ready
+    // Initialize forms when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
         // Setup grid button listeners for metal detection form
         function setupMetalDetectionGrids() {
@@ -1165,30 +1813,89 @@
             }
         }
 
-        // Initialize all metal detection features
+        // Setup daily hygiene form conditional fields
+        function setupDailyHygieneConditionalFields() {
+            const radioButtons = document.querySelectorAll('input[name="dhKetLuanChung"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const conditionalFields = document.getElementById('dhConditionalFields');
+                    const descField = document.getElementById('dhMoTaKhongDat');
+                    
+                    if (this.value === 'Không đạt') {
+                        if (conditionalFields) {
+                            conditionalFields.style.display = 'block';
+                        }
+                        if (descField) {
+                            descField.required = true;
+                        }
+                    } else {
+                        if (conditionalFields) {
+                            conditionalFields.style.display = 'none';
+                        }
+                        if (descField) {
+                            descField.required = false;
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize all forms
         setupMetalDetectionGrids();
         setupMetalDetectionForm();
         setupMetalDetectionCancel();
+        setupDailyHygieneConditionalFields();
         
-        // Generate initial ID and set current date/time for metal detection form
+        // Generate initial IDs and set current date/time for all forms
         const now = new Date();
         const timestamp = now.getTime().toString(36);
         const random = Math.random().toString(36).substring(2, 8);
-        const idField = document.getElementById('mdId');
-        if (idField) {
-            idField.value = timestamp + random;
+        
+        // Metal Detection Form
+        const mdIdField = document.getElementById('mdId');
+        if (mdIdField) {
+            mdIdField.value = timestamp + random;
         }
         
-        const dateField = document.getElementById('mdNgaySanXuat');
-        if (dateField) {
-            dateField.value = now.toISOString().split('T')[0];
+        const mdDateField = document.getElementById('mdNgaySanXuat');
+        if (mdDateField) {
+            mdDateField.value = now.toISOString().split('T')[0];
         }
         
-        const timeField = document.getElementById('mdGioKiemTra');
-        if (timeField) {
+        const mdTimeField = document.getElementById('mdGioKiemTra');
+        if (mdTimeField) {
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            timeField.value = `${hours}:${minutes}`;
+            mdTimeField.value = `${hours}:${minutes}`;
+        }
+
+        // Daily Hygiene Form
+        const dhIdField = document.getElementById('dhId');
+        if (dhIdField) {
+            dhIdField.value = timestamp + 'dh' + random;
+        }
+        
+        const dhDateField = document.getElementById('dhNgay');
+        if (dhDateField) {
+            dhDateField.value = now.toISOString().split('T')[0];
+        }
+
+        // Product Changeover Form
+        const pcIdField = document.getElementById('pcId');
+        if (pcIdField) {
+            pcIdField.value = timestamp + 'pc' + random;
+        }
+        
+        const pcDateField = document.getElementById('pcNgaySanXuat');
+        if (pcDateField) {
+            pcDateField.value = now.toISOString().split('T')[0];
+        }
+        
+        const pcTimeField = document.getElementById('pcGio');
+        if (pcTimeField) {
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            pcTimeField.value = `${hours}:${minutes}`;
         }
     });
     </script>
