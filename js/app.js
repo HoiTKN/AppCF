@@ -1,4 +1,4 @@
-// js/app.js - Updated for Metal Detection Form
+// js/app.js - Updated for All 4 Forms
 
 // Main Application Controller
 class App {
@@ -241,6 +241,8 @@ class App {
             'dashboard': 'Dashboard',
             'process-data': 'Process Data',
             'metal-detection': 'Kiểm soát máy dò kim loại',
+            'daily-hygiene': 'Đánh giá vệ sinh hàng ngày',
+            'product-changeover': 'Checklist chuyển đổi sản phẩm',
             'data-view': 'Xem dữ liệu',
             'analytics': 'Phân tích',
             'parameters': 'Cài đặt thông số'
@@ -265,6 +267,12 @@ class App {
                 break;
             case 'metal-detection':
                 this.initializeMetalDetectionForm();
+                break;
+            case 'daily-hygiene':
+                this.initializeDailyHygieneForm();
+                break;
+            case 'product-changeover':
+                this.initializeProductChangeoverForm();
                 break;
             default:
                 console.log(`Form ${formName} loaded`);
@@ -295,6 +303,51 @@ class App {
         }
         
         console.log('Metal detection form initialized');
+    }
+
+    initializeDailyHygieneForm() {
+        // Initialize daily hygiene form with current date/time and new ID
+        const now = new Date();
+        const timestamp = now.getTime().toString(36);
+        const random = Math.random().toString(36).substring(2, 8);
+        
+        const idField = document.getElementById('dhId');
+        if (idField) {
+            idField.value = 'dh' + timestamp + random;
+        }
+        
+        const dateField = document.getElementById('dhNgay');
+        if (dateField) {
+            dateField.value = now.toISOString().split('T')[0];
+        }
+        
+        console.log('Daily hygiene form initialized');
+    }
+
+    initializeProductChangeoverForm() {
+        // Initialize product changeover form with current date/time and new ID
+        const now = new Date();
+        const timestamp = now.getTime().toString(36);
+        const random = Math.random().toString(36).substring(2, 8);
+        
+        const idField = document.getElementById('pcId');
+        if (idField) {
+            idField.value = 'pc' + timestamp + random;
+        }
+        
+        const dateField = document.getElementById('pcNgaySanXuat');
+        if (dateField) {
+            dateField.value = now.toISOString().split('T')[0];
+        }
+        
+        const timeField = document.getElementById('pcGio');
+        if (timeField) {
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeField.value = `${hours}:${minutes}`;
+        }
+        
+        console.log('Product changeover form initialized');
     }
 
     toggleSidebar() {
@@ -333,17 +386,31 @@ class App {
         // Update dashboard statistics
         const processItems = sharepointManager.getLocalStorageItems();
         const metalDetectionItems = this.getMetalDetectionItems();
+        const dailyHygieneItems = this.getDailyHygieneItems();
+        const productChangeoverItems = this.getProductChangeoverItems();
         
         // Total process records
         document.getElementById('totalRecords').textContent = processItems.length;
         
-        // Total metal detection records
+        // Metal detection records
         const metalDetectionElement = document.getElementById('metalDetectionRecords');
         if (metalDetectionElement) {
             metalDetectionElement.textContent = metalDetectionItems.length;
         }
         
-        // Today's records (both types)
+        // Daily hygiene records
+        const dailyHygieneElement = document.getElementById('dailyHygieneRecords');
+        if (dailyHygieneElement) {
+            dailyHygieneElement.textContent = dailyHygieneItems.length;
+        }
+        
+        // Product changeover records
+        const productChangeoverElement = document.getElementById('productChangeoverRecords');
+        if (productChangeoverElement) {
+            productChangeoverElement.textContent = productChangeoverItems.length;
+        }
+        
+        // Today's records (all types)
         const today = new Date().toDateString();
         const todayProcessRecords = processItems.filter(item => {
             const itemDate = new Date(item.timestamp).toDateString();
@@ -353,13 +420,29 @@ class App {
             const itemDate = new Date(item.timestamp).toDateString();
             return itemDate === today;
         });
+        const todayHygieneRecords = dailyHygieneItems.filter(item => {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === today;
+        });
+        const todayChangeoverRecords = productChangeoverItems.filter(item => {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === today;
+        });
         
-        document.getElementById('todayRecords').textContent = todayProcessRecords.length + todayMetalRecords.length;
+        const totalTodayRecords = todayProcessRecords.length + todayMetalRecords.length + 
+                                 todayHygieneRecords.length + todayChangeoverRecords.length;
+        
+        const todayElement = document.getElementById('todayRecords');
+        if (todayElement) {
+            todayElement.textContent = totalTodayRecords;
+        }
         
         // Recent records (combined)
         const allRecords = [
             ...processItems.map(item => ({ ...item, type: 'Process Data' })),
-            ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' }))
+            ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' })),
+            ...dailyHygieneItems.map(item => ({ ...item, type: 'Daily Hygiene' })),
+            ...productChangeoverItems.map(item => ({ ...item, type: 'Product Changeover' }))
         ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         this.updateRecentRecords(allRecords.slice(0, 5));
@@ -371,6 +454,26 @@ class App {
             return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
         } catch (error) {
             console.error('Error reading metal detection data from localStorage:', error);
+            return [];
+        }
+    }
+
+    getDailyHygieneItems() {
+        try {
+            const data = localStorage.getItem('qaDailyHygieneData');
+            return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
+        } catch (error) {
+            console.error('Error reading daily hygiene data from localStorage:', error);
+            return [];
+        }
+    }
+
+    getProductChangeoverItems() {
+        try {
+            const data = localStorage.getItem('qaProductChangeoverData');
+            return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
+        } catch (error) {
+            console.error('Error reading product changeover data from localStorage:', error);
             return [];
         }
     }
@@ -392,6 +495,10 @@ class App {
                 displayInfo = `<strong>${item.site} - ${item.lineSX}</strong><br><span class="text-muted">${item.sanPham || '-'}</span>`;
             } else if (item.type === 'Metal Detection') {
                 displayInfo = `<strong>${item.site} - Line ${item.line}</strong><br><span class="text-muted">Metal Detection</span>`;
+            } else if (item.type === 'Daily Hygiene') {
+                displayInfo = `<strong>${item.site} - ${item.khuVuc}</strong><br><span class="text-muted">Daily Hygiene</span>`;
+            } else if (item.type === 'Product Changeover') {
+                displayInfo = `<strong>${item.site} - Line ${item.line}</strong><br><span class="text-muted">${item.tenSanPham}</span>`;
             }
             
             return `
@@ -420,21 +527,27 @@ class App {
             
             let processItems = [];
             let metalDetectionItems = [];
+            let dailyHygieneItems = [];
+            let productChangeoverItems = [];
             
             if (this.isDevelopmentMode) {
                 // Get data from localStorage
                 processItems = sharepointManager.getLocalStorageItems();
                 metalDetectionItems = this.getMetalDetectionItems();
+                dailyHygieneItems = this.getDailyHygieneItems();
+                productChangeoverItems = this.getProductChangeoverItems();
             } else {
                 // Get recent items from SharePoint
                 processItems = await sharepointManager.getRecentItems(20);
-                // TODO: Implement SharePoint integration for metal detection
+                // TODO: Implement SharePoint integration for other forms
             }
             
             // Combine and sort by timestamp
             const allItems = [
                 ...processItems.map(item => ({ ...item, type: 'Process Data' })),
-                ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' }))
+                ...metalDetectionItems.map(item => ({ ...item, type: 'Metal Detection' })),
+                ...dailyHygieneItems.map(item => ({ ...item, type: 'Daily Hygiene' })),
+                ...productChangeoverItems.map(item => ({ ...item, type: 'Product Changeover' }))
             ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             if (allItems && allItems.length > 0) {
@@ -470,6 +583,12 @@ class App {
             } else if (item.type === 'Metal Detection') {
                 lineSX = `Line ${item.line}` || '-';
                 sanPham = 'Metal Detection';
+            } else if (item.type === 'Daily Hygiene') {
+                lineSX = `Line ${item.line}` || '-';
+                sanPham = item.khuVuc || 'Daily Hygiene';
+            } else if (item.type === 'Product Changeover') {
+                lineSX = `Line ${item.line}` || '-';
+                sanPham = item.tenSanPham || 'Product Changeover';
             }
             
             row.innerHTML = `
@@ -521,6 +640,12 @@ class App {
             } else if (itemType === 'Metal Detection') {
                 items = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
                 item = items[itemId];
+            } else if (itemType === 'Daily Hygiene') {
+                items = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+                item = items[itemId];
+            } else if (itemType === 'Product Changeover') {
+                items = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
+                item = items[itemId];
             }
             
             if (item) {
@@ -535,7 +660,24 @@ class App {
 
     async deleteItem(itemIndex, itemType) {
         if (this.isDevelopmentMode && confirm(`Bạn có chắc muốn xóa bản ghi ${itemType} này?`)) {
-            let storageKey = itemType === 'Process Data' ? 'qaProcessData' : 'qaMetalDetectionData';
+            let storageKey = '';
+            switch(itemType) {
+                case 'Process Data':
+                    storageKey = 'qaProcessData';
+                    break;
+                case 'Metal Detection':
+                    storageKey = 'qaMetalDetectionData';
+                    break;
+                case 'Daily Hygiene':
+                    storageKey = 'qaDailyHygieneData';
+                    break;
+                case 'Product Changeover':
+                    storageKey = 'qaProductChangeoverData';
+                    break;
+                default:
+                    return;
+            }
+            
             let items = JSON.parse(localStorage.getItem(storageKey) || '[]');
             items.splice(itemIndex, 1);
             localStorage.setItem(storageKey, JSON.stringify(items));
@@ -603,9 +745,11 @@ class App {
 
     // Development helper methods
     clearAllData() {
-        if (confirm('Xóa toàn bộ dữ liệu development (bao gồm cả Process Data và Metal Detection)?')) {
+        if (confirm('Xóa toàn bộ dữ liệu development (tất cả các forms)?')) {
             localStorage.removeItem('qaProcessData');
             localStorage.removeItem('qaMetalDetectionData');
+            localStorage.removeItem('qaDailyHygieneData');
+            localStorage.removeItem('qaProductChangeoverData');
             this.showToast('Thành công', 'Đã xóa toàn bộ dữ liệu', 'success');
             
             // Update views
@@ -621,19 +765,26 @@ class App {
     exportData() {
         const processData = localStorage.getItem('qaProcessData');
         const metalDetectionData = localStorage.getItem('qaMetalDetectionData');
+        const dailyHygieneData = localStorage.getItem('qaDailyHygieneData');
+        const productChangeoverData = localStorage.getItem('qaProductChangeoverData');
         
         const exportData = {
             processData: processData ? JSON.parse(processData) : [],
             metalDetectionData: metalDetectionData ? JSON.parse(metalDetectionData) : [],
+            dailyHygieneData: dailyHygieneData ? JSON.parse(dailyHygieneData) : [],
+            productChangeoverData: productChangeoverData ? JSON.parse(productChangeoverData) : [],
             exportDate: new Date().toISOString()
         };
         
-        if (exportData.processData.length > 0 || exportData.metalDetectionData.length > 0) {
+        const totalRecords = exportData.processData.length + exportData.metalDetectionData.length + 
+                            exportData.dailyHygieneData.length + exportData.productChangeoverData.length;
+        
+        if (totalRecords > 0) {
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'qa_data_export.json';
+            a.download = 'qa_all_data_export.json';
             a.click();
             URL.revokeObjectURL(url);
         } else {
