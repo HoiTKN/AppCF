@@ -1,10 +1,16 @@
-// Metal Detection Component
+// Metal Detection Component - Updated
 class MetalDetectionComponent extends BaseComponent {
     async initialize() {
         this.state = {
             selectedLine: null,
-            selectedFe15: null,
-            selectedFe20: null,
+            selectedFeSize: null,
+            selectedFeSamples: null,
+            selectedInoxSize: null,
+            selectedInoxSamples: null,
+            selectedMetalSize: null,
+            selectedMetalSamples: null,
+            selectedWireSize: null,
+            selectedWireSamples: null,
             nguoiNhiemTu: 0.00
         };
     }
@@ -114,7 +120,7 @@ class MetalDetectionComponent extends BaseComponent {
                                                 <i class="bi bi-dash"></i>
                                             </button>
                                             <input type="number" class="form-control text-center" 
-                                                   id="mdNguoiNhiemTu" value="0.00" step="0.01" readonly>
+                                                   id="mdNguoiNhiemTu" value="0.00" step="0.01" min="0">
                                             <button class="btn btn-outline-secondary" type="button" 
                                                     id="increaseBtn">
                                                 <i class="bi bi-plus"></i>
@@ -151,33 +157,198 @@ class MetalDetectionComponent extends BaseComponent {
                                     Kiểm tra mẫu chuẩn Fe
                                 </h5>
                                 
-                                <!-- Fe 1.5 -->
+                                <!-- Fe Size Selection -->
                                 <div class="mb-3">
                                     <label class="form-label">
-                                        <span class="badge bg-primary">Fe 1.5</span>
-                                        Số mẫu máy dò bắt được
+                                        <span class="badge bg-primary">Fe</span>
+                                        Kích thước mẫu Fe (mm)
                                     </label>
                                     <div class="selection-grid">
-                                        ${[1,2,3,4,5,6,7,8,9,10].map(num => `
-                                            <button type="button" class="grid-btn" data-fe15="${num}">
-                                                ${num}
+                                        ${[1.5, 2.0, 2.5].map(size => `
+                                            <button type="button" class="grid-btn" data-fe-size="${size}">
+                                                ${size}
                                             </button>
                                         `).join('')}
                                     </div>
                                 </div>
 
-                                <!-- Fe 2.0 -->
+                                <!-- Fe Samples Count -->
                                 <div class="mb-3">
-                                    <label class="form-label">
-                                        <span class="badge bg-success">Fe 2.0</span>
-                                        Số mẫu máy dò bắt được
-                                    </label>
+                                    <label class="form-label">Số mẫu Fe bắt được</label>
                                     <div class="selection-grid">
                                         ${[1,2,3,4,5,6,7,8,9,10].map(num => `
-                                            <button type="button" class="grid-btn" data-fe20="${num}">
+                                            <button type="button" class="grid-btn" data-fe-samples="${num}">
                                                 ${num}
                                             </button>
                                         `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Inox Standards Testing -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-disc me-2"></i>
+                                    Kiểm tra mẫu chuẩn Inox
+                                </h5>
+                                
+                                <!-- Inox Size Selection -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <span class="badge bg-success">Inox</span>
+                                        Kích thước mẫu Inox (mm)
+                                    </label>
+                                    <div class="selection-grid">
+                                        ${[2.0, 2.5, 3.0].map(size => `
+                                            <button type="button" class="grid-btn" data-inox-size="${size}">
+                                                ${size}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Inox Samples Count -->
+                                <div class="mb-3">
+                                    <label class="form-label">Số mẫu Inox bắt được</label>
+                                    <div class="selection-grid">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(num => `
+                                            <button type="button" class="grid-btn" data-inox-samples="${num}">
+                                                ${num}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metal Color Standards Testing -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-circle me-2"></i>
+                                    Kiểm tra mẫu kim loại màu
+                                </h5>
+                                
+                                <!-- Metal Size Selection -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <span class="badge bg-warning">Metal</span>
+                                        Kích thước mẫu kim loại màu (mm)
+                                    </label>
+                                    <div class="selection-grid">
+                                        ${[2.5, 3.0, 3.5].map(size => `
+                                            <button type="button" class="grid-btn" data-metal-size="${size}">
+                                                ${size}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Metal Samples Count -->
+                                <div class="mb-3">
+                                    <label class="form-label">Số mẫu kim loại màu bắt được</label>
+                                    <div class="selection-grid">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(num => `
+                                            <button type="button" class="grid-btn" data-metal-samples="${num}">
+                                                ${num}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wire Sample Testing -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-radioactive me-2"></i>
+                                    Kiểm tra mẫu giả lập
+                                </h5>
+                                
+                                <!-- Wire Size Selection -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <span class="badge bg-danger">Giả lập</span>
+                                        Kích thước mẫu giả lập (mm)
+                                    </label>
+                                    <div class="selection-grid">
+                                        ${[7, 10, 12, 15].map(size => `
+                                            <button type="button" class="grid-btn" data-wire-size="${size}">
+                                                ${size}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Wire Samples Count -->
+                                <div class="mb-3">
+                                    <label class="form-label">Số mẫu giả lập bắt được</label>
+                                    <div class="selection-grid">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(num => `
+                                            <button type="button" class="grid-btn" data-wire-samples="${num}">
+                                                ${num}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Results -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-clipboard-check me-2"></i>
+                                    Kết quả kiểm tra
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kết luận test máy</label>
+                                        <select class="modern-input modern-select" id="mdKetLuanTest">
+                                            <option value="">Chọn...</option>
+                                            <option value="Đạt">✅ Đạt</option>
+                                            <option value="Không đạt">❌ Không đạt</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Số lượng được máy dò đá/loại ra</label>
+                                        <input type="number" class="modern-input" id="mdSoLuongDa" 
+                                               min="0" placeholder="0">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Số lượng được máy phát hiện đúng (có kim loại)</label>
+                                        <input type="number" class="modern-input" id="mdSoLuongDung" 
+                                               min="0" placeholder="0">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nguồn nhiễm</label>
+                                        <input type="number" class="modern-input" id="mdNguonNhiem" 
+                                               step="0.01" min="0" placeholder="0.00">
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label class="form-label">Mô tả kim loại (nếu có kim loại)</label>
+                                        <textarea class="modern-input" id="mdMoTaKimLoai" rows="3" 
+                                                  placeholder="Mô tả chi tiết về kim loại được phát hiện (nếu có)..."></textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Hình ảnh</label>
+                                        <input type="file" class="modern-input" id="mdHinhAnh" 
+                                               accept="image/*" capture="camera">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Thẩm tra ký tên bởi PQCI</label>
+                                        <input type="text" class="modern-input" id="mdThamTraPQCI" 
+                                               placeholder="Tên người thẩm tra từ PQCI">
                                     </div>
                                 </div>
                             </div>
@@ -226,25 +397,79 @@ class MetalDetectionComponent extends BaseComponent {
             });
         });
 
-        // Fe 1.5 selection
-        this.$$('[data-fe15]').forEach(btn => {
+        // Fe size selection
+        this.$$('[data-fe-size]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
-                this.$$('[data-fe15]').forEach(b => b.classList.remove('selected'));
+                this.$$('[data-fe-size]').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
-                this.state.selectedFe15 = btn.dataset.fe15;
+                this.state.selectedFeSize = btn.dataset.feSize;
             });
         });
 
-        // Fe 2.0 selection
-        this.$$('[data-fe20]').forEach(btn => {
+        // Fe samples selection
+        this.$$('[data-fe-samples]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
-                this.$$('[data-fe20]').forEach(b => b.classList.remove('selected'));
+                this.$$('[data-fe-samples]').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
-                this.state.selectedFe20 = btn.dataset.fe20;
+                this.state.selectedFeSamples = btn.dataset.feSamples;
             });
         });
 
-        // Number input controls
+        // Inox size selection
+        this.$$('[data-inox-size]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-inox-size]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedInoxSize = btn.dataset.inoxSize;
+            });
+        });
+
+        // Inox samples selection
+        this.$$('[data-inox-samples]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-inox-samples]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedInoxSamples = btn.dataset.inoxSamples;
+            });
+        });
+
+        // Metal size selection
+        this.$$('[data-metal-size]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-metal-size]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedMetalSize = btn.dataset.metalSize;
+            });
+        });
+
+        // Metal samples selection
+        this.$$('[data-metal-samples]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-metal-samples]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedMetalSamples = btn.dataset.metalSamples;
+            });
+        });
+
+        // Wire size selection
+        this.$$('[data-wire-size]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-wire-size]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedWireSize = btn.dataset.wireSize;
+            });
+        });
+
+        // Wire samples selection
+        this.$$('[data-wire-samples]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                this.$$('[data-wire-samples]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.state.selectedWireSamples = btn.dataset.wireSamples;
+            });
+        });
+
+        // Number input controls for nguoi nhiem tu
         const decreaseBtn = this.$('#decreaseBtn');
         const increaseBtn = this.$('#increaseBtn');
         const numberInput = this.$('#mdNguoiNhiemTu');
@@ -263,6 +488,15 @@ class MetalDetectionComponent extends BaseComponent {
                 let value = parseFloat(numberInput.value) || 0;
                 value = value + 0.01;
                 numberInput.value = value.toFixed(2);
+                this.state.nguoiNhiemTu = value;
+            });
+        }
+
+        // Allow direct input for nguoi nhiem tu
+        if (numberInput) {
+            this.addEventListener(numberInput, 'input', () => {
+                let value = parseFloat(numberInput.value) || 0;
+                value = Math.max(0, value);
                 this.state.nguoiNhiemTu = value;
             });
         }
@@ -294,8 +528,30 @@ class MetalDetectionComponent extends BaseComponent {
             line: this.state.selectedLine,
             nguoiNhiemTu: this.state.nguoiNhiemTu,
             lyDoThayDoi: this.$('#mdLyDoThayDoi').value,
-            fe15: this.state.selectedFe15,
-            fe20: this.state.selectedFe20
+            
+            // Fe testing
+            feSize: this.state.selectedFeSize,
+            feSamples: this.state.selectedFeSamples,
+            
+            // Inox testing
+            inoxSize: this.state.selectedInoxSize,
+            inoxSamples: this.state.selectedInoxSamples,
+            
+            // Metal testing
+            metalSize: this.state.selectedMetalSize,
+            metalSamples: this.state.selectedMetalSamples,
+            
+            // Wire testing
+            wireSize: this.state.selectedWireSize,
+            wireSamples: this.state.selectedWireSamples,
+            
+            // Test results
+            ketLuanTest: this.$('#mdKetLuanTest').value,
+            soLuongDa: this.$('#mdSoLuongDa').value,
+            soLuongDung: this.$('#mdSoLuongDung').value,
+            nguonNhiem: this.$('#mdNguonNhiem').value,
+            moTaKimLoai: this.$('#mdMoTaKimLoai').value,
+            thamTraPQCI: this.$('#mdThamTraPQCI').value
         };
 
         // Save to localStorage
@@ -329,8 +585,14 @@ class MetalDetectionComponent extends BaseComponent {
         // Reset state
         this.state = {
             selectedLine: null,
-            selectedFe15: null,
-            selectedFe20: null,
+            selectedFeSize: null,
+            selectedFeSamples: null,
+            selectedInoxSize: null,
+            selectedInoxSamples: null,
+            selectedMetalSize: null,
+            selectedMetalSamples: null,
+            selectedWireSize: null,
+            selectedWireSamples: null,
             nguoiNhiemTu: 0.00
         };
         
