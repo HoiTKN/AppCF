@@ -101,13 +101,18 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Core JS Files -->
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sharepoint.js"></script>
     
+    <!-- Component System - MUST LOAD FIRST -->
     <script src="js/component-loader.js"></script>
+    
+    <!-- Components - Load after component system -->
     <script src="js/dashboard-component.js"></script>
     <script src="js/process-data-component.js"></script>
     <script src="js/metal-detection-component.js"></script>
@@ -115,11 +120,19 @@
     <script src="js/product-changeover-component.js"></script>
     <script src="js/ghp-hygiene-component.js"></script>
     
+    <!-- Main App - Load last -->
     <script src="js/modern-app.js"></script>
     
     <script>
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
+            // Check if all required components are available
+            console.log('Initializing app...');
+            console.log('BaseComponent available:', typeof BaseComponent !== 'undefined');
+            console.log('componentLoader available:', typeof componentLoader !== 'undefined');
+            console.log('Registered components:', componentLoader ? componentLoader.getRegisteredComponents() : 'N/A');
+            
+            // Initialize app
             window.app = new ModernApp();
             app.initialize();
         });
