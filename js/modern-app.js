@@ -1,4 +1,4 @@
-// Modern App Controller
+// Modern App Controller - Updated
 class ModernApp {
     constructor() {
         this.currentPage = 'dashboard';
@@ -59,7 +59,7 @@ class ModernApp {
     }
 
     setupNavigation() {
-        // Navigation structure
+        // Navigation structure - UPDATED
         const navigation = [
             {
                 section: 'DASHBOARD',
@@ -70,7 +70,8 @@ class ModernApp {
             {
                 section: 'NHẬP DỮ LIỆU',
                 items: [
-                    { id: 'process-data', label: 'Process Data', icon: 'clipboard-data' },
+                    { id: 'process-data', label: 'Data công nghệ mì', icon: 'clipboard-data' }, // UPDATED
+                    { id: 'pho-technology', label: 'Data công nghệ phở', icon: 'clipboard-data-fill' }, // NEW
                     { id: 'metal-detection', label: 'Kiểm soát máy dò kim loại', icon: 'shield-check' },
                     { id: 'daily-hygiene', label: 'Đánh giá vệ sinh hàng ngày', icon: 'droplet-half' },
                     { id: 'ghp-hygiene', label: 'Đánh giá GHP khi ngưng line >12h', icon: 'clock-history' },
@@ -166,6 +167,9 @@ class ModernApp {
                 case 'process-data':
                     await componentLoader.load('process-data', container);
                     break;
+                case 'pho-technology': // NEW
+                    await componentLoader.load('pho-technology', container);
+                    break;
                 case 'metal-detection':
                     await componentLoader.load('metal-detection', container);
                     break;
@@ -206,7 +210,8 @@ class ModernApp {
     updateBreadcrumb(page) {
         const pageNames = {
             'dashboard': 'Dashboard',
-            'process-data': 'Process Data',
+            'process-data': 'Data công nghệ mì', // UPDATED
+            'pho-technology': 'Data công nghệ phở', // NEW
             'metal-detection': 'Kiểm soát máy dò kim loại',
             'daily-hygiene': 'Đánh giá vệ sinh hàng ngày',
             'ghp-hygiene': 'Đánh giá GHP khi ngưng line >12h',
@@ -220,7 +225,7 @@ class ModernApp {
     }
 
     async loadDataView(container) {
-        // Simple data view implementation
+        // Simple data view implementation - UPDATED to include pho data
         container.innerHTML = `
             <div class="fade-in">
                 <div class="page-header mb-4">
@@ -266,15 +271,17 @@ class ModernApp {
     }
 
     loadTableData() {
-        // Get all data from localStorage
+        // Get all data from localStorage - UPDATED to include pho data
         const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+        const phoData = JSON.parse(localStorage.getItem('qaPhoTechnologyData') || '[]'); // NEW
         const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
         const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
         const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
         const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
 
         const allData = [
-            ...processData.map(d => ({ ...d, type: 'Process Data', badge: 'primary' })),
+            ...processData.map(d => ({ ...d, type: 'Data công nghệ mì', badge: 'primary' })), // UPDATED
+            ...phoData.map(d => ({ ...d, type: 'Data công nghệ phở', badge: 'info' })), // NEW
             ...metalData.map(d => ({ ...d, type: 'Metal Detection', badge: 'success' })),
             ...hygieneData.map(d => ({ ...d, type: 'Daily Hygiene', badge: 'info' })),
             ...ghpData.map(d => ({ ...d, type: 'GHP Hygiene', badge: 'warning' })),
