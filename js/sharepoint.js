@@ -314,6 +314,12 @@ class SharePointManager {
             let storageKey = 'qaProcessData';
             if (formData.formType) {
                 switch(formData.formType) {
+                    case 'process-data':
+                        storageKey = 'qaProcessData';
+                        break;
+                    case 'pho-technology': // NEW
+                        storageKey = 'qaPhoTechnologyData';
+                        break;
                     case 'metal-detection':
                         storageKey = 'qaMetalDetectionData';
                         break;
@@ -358,6 +364,12 @@ class SharePointManager {
         try {
             let storageKey = 'qaProcessData';
             switch(type) {
+                case 'process-data':
+                    storageKey = 'qaProcessData';
+                    break;
+                case 'pho-technology': // NEW
+                    storageKey = 'qaPhoTechnologyData';
+                    break;
                 case 'metal-detection':
                     storageKey = 'qaMetalDetectionData';
                     break;
@@ -382,13 +394,87 @@ class SharePointManager {
 
     mapFormDataToSharePoint(formData) {
         // Determine form type and map accordingly
-        if (formData.feSize !== undefined || formData.inoxSize !== undefined) {
+        if (formData.formType === 'pho-technology') {
+            // NEW: Pho Technology Form
+            return this.mapPhoTechnologyData(formData);
+        } else if (formData.feSize !== undefined || formData.inoxSize !== undefined) {
             // Metal Detection Form
             return this.mapMetalDetectionData(formData);
         } else {
             // Process Data Form
             return this.mapProcessData(formData);
         }
+    }
+
+    // NEW: Map Pho Technology Data
+    mapPhoTechnologyData(formData) {
+        const mappedData = {
+            Title: `PHO-${formData.site}-${formData.line}-${new Date().toISOString()}`,
+            Site: formData.site,
+            Line: formData.line
+        };
+
+        // Basic info
+        if (formData.maNhanVien) {
+            mappedData['M_x00e3__x0020_nh_x00e2_n_x0020_'] = formData.maNhanVien;
+        }
+        if (formData.nsx) {
+            mappedData['NSX'] = formData.nsx;
+        }
+        if (formData.gioKiemTra) {
+            mappedData['Gi_x1edd__x0020_ki_x1ec3_m_x002'] = formData.gioKiemTra;
+        }
+        if (formData.sanPham) {
+            mappedData['S_x1ea3_n_x0020_ph_x1ea9_m'] = formData.sanPham;
+        }
+
+        // Pho specific data
+        if (formData.baumeKansui) {
+            mappedData['Baume_x0020_Kansui'] = parseFloat(formData.baumeKansui);
+        }
+        if (formData.ngoaiQuanKansui) {
+            mappedData['Ngo_x1ea1_i_x0020_quan_x0020_Kan'] = formData.ngoaiQuanKansui;
+        }
+        if (formData.baumeDichTrang) {
+            mappedData['Baume_x0020_d_x1ecb_ch_x0020_tr'] = parseFloat(formData.baumeDichTrang);
+        }
+        if (formData.doDayTrai) {
+            mappedData['_x0110__x1ed9__x0020_d_x00e0_y_x'] = parseFloat(formData.doDayTrai);
+        }
+        if (formData.doDayGiua) {
+            mappedData['_x0110__x1ed9__x0020_d_x00e0_y_x0'] = parseFloat(formData.doDayGiua);
+        }
+        if (formData.doDayPhai) {
+            mappedData['_x0110__x1ed9__x0020_d_x00e0_y_x1'] = parseFloat(formData.doDayPhai);
+        }
+        if (formData.ngoaiQuanTamPhoSauHap) {
+            mappedData['Ngo_x1ea1_i_x0020_quan_x0020_t_x01'] = formData.ngoaiQuanTamPhoSauHap;
+        }
+        if (formData.doAmVatSauSay) {
+            mappedData['_x0110__x1ed9__x0020__x1ea9_m_x00'] = parseFloat(formData.doAmVatSauSay);
+        }
+        if (formData.ngoaiQuanVatSauSay) {
+            mappedData['Ngo_x1ea1_i_x0020_quan_x0020_v_x01'] = formData.ngoaiQuanVatSauSay;
+        }
+
+        // Sensory data
+        if (formData.camQuanCotinh) {
+            mappedData['C_x1ea3_m_x0020_quan_x0020_c_x01'] = parseFloat(formData.camQuanCotinh);
+        }
+        if (formData.camQuanMau) {
+            mappedData['C_x1ea3_m_x0020_quan_x0020_m_x00'] = parseFloat(formData.camQuanMau);
+        }
+        if (formData.camQuanMui) {
+            mappedData['C_x1ea3_m_x0020_quan_x0020_m_x00e'] = parseFloat(formData.camQuanMui);
+        }
+        if (formData.camQuanVi) {
+            mappedData['C_x1ea3_m_x0020_quan_x0020_v_x1ec'] = parseFloat(formData.camQuanVi);
+        }
+        if (formData.moTaCQ) {
+            mappedData['M_x00f4__x0020_t_x1ea3__x0020_C_'] = formData.moTaCQ;
+        }
+
+        return mappedData;
     }
 
     mapProcessData(formData) {
@@ -417,9 +503,18 @@ class SharePointManager {
             mappedData['SanPham'] = formData.sanPham; // Try both names
         }
 
-        // Add timestamps
-        mappedData.NSX = new Date().toISOString();
-        mappedData['Gi_x1edd__x0020_ki_x1ec3_m_x002'] = new Date().toLocaleTimeString('vi-VN');
+        // Add timestamps - UPDATED
+        if (formData.nsx) {
+            mappedData.NSX = formData.nsx;
+        } else {
+            mappedData.NSX = new Date().toISOString();
+        }
+        
+        if (formData.gioKiemTra) {
+            mappedData['Gi_x1edd__x0020_ki_x1ec3_m_x002'] = formData.gioKiemTra;
+        } else {
+            mappedData['Gi_x1edd__x0020_ki_x1ec3_m_x002'] = new Date().toLocaleTimeString('vi-VN');
+        }
 
         // Kansui data
         if (formData.brixKansui) {
@@ -667,11 +762,14 @@ class SharePointManager {
     generateSampleData() {
         const sampleRecords = [
             {
+                formType: 'process-data',
                 site: 'MMB',
                 maNhanVien: 'QA001',
                 lineSX: 'L1',
                 maDKSX: 'MMB.L1.001',
                 sanPham: 'Mì tôm chua cay',
+                nsx: new Date().toISOString().split('T')[0],
+                gioKiemTra: new Date().toTimeString().slice(0, 8),
                 brixKansui: '8.1',
                 nhietDoKansui: '22',
                 ngoaiQuanKansui: 'Đạt',
@@ -699,35 +797,27 @@ class SharePointManager {
                 moTaCamQuan: 'Cảm quan tốt, đạt tiêu chuẩn'
             },
             {
-                site: 'MSI',
+                formType: 'pho-technology', // NEW sample data
+                site: 'MMB',
                 maNhanVien: 'QA002',
-                lineSX: 'L3',
-                maDKSX: 'MSI.L3.003',
-                sanPham: 'Mì bò hầm',
-                brixKansui: '8.7',
-                nhietDoKansui: '24',
+                line: '1',
+                sanPham: 'Phở Story',
+                nsx: new Date().toISOString().split('T')[0],
+                gioKiemTra: new Date().toTimeString().slice(0, 8),
+                baumeKansui: '5.50',
                 ngoaiQuanKansui: 'Đạt',
-                brixSeasoning: '23',
-                ngoaiQuanSeasoning: 'Đạt',
-                doDayLaBot: '1.6',
-                ngoaiQuanSoi: 'Đạt',
-                apSuatHoiVan: 'Đạt',
-                nhietDauTrai: '170',
-                nhietDauPhai: '172',
-                nhietGiua1Trai: '175',
-                nhietGiua1Phai: '178',
-                nhietGiua2Trai: '173',
-                nhietGiua2Phai: '176',
-                nhietGiua3Trai: '171',
-                nhietGiua3Phai: '174',
-                nhietCuoiTrai: '167',
-                nhietCuoiPhai: '169',
-                ngoaiQuanPhoiMi: 'Đạt',
-                vanChamBHA: 'Đạt',
-                camQuanCoTinh: '9.4',
-                camQuanMau: '9.3',
-                camQuanMui: '9.5',
-                camQuanVi: '9.4'
+                baumeDichTrang: '2.30',
+                doDayTrai: '0.95',
+                doDayGiua: '0.98',
+                doDayPhai: '0.96',
+                ngoaiQuanTamPhoSauHap: 'Đạt',
+                doAmVatSauSay: '11.5',
+                ngoaiQuanVatSauSay: 'Đạt',
+                camQuanCotinh: '9.3',
+                camQuanMau: '9.2',
+                camQuanMui: '9.4',
+                camQuanVi: '9.3',
+                moTaCQ: 'Cảm quan phở đạt chuẩn'
             }
         ];
         
@@ -741,6 +831,7 @@ class SharePointManager {
 
     clearLocalStorage() {
         localStorage.removeItem('qaProcessData');
+        localStorage.removeItem('qaPhoTechnologyData'); // NEW
         localStorage.removeItem('qaMetalDetectionData');
         localStorage.removeItem('qaDailyHygieneData');
         localStorage.removeItem('qaGHPHygieneData');
