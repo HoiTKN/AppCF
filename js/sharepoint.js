@@ -1,4 +1,4 @@
-// js/sharepoint.js - Development Version (with mock data)
+// js/sharepoint.js - Development Version (with mock data) - Updated
 
 class SharePointManager {
     constructor() {
@@ -310,22 +310,43 @@ class SharePointManager {
             formData.timestamp = new Date().toISOString();
             formData.id = Date.now().toString();
             
+            // Determine storage key based on form type
+            let storageKey = 'qaProcessData';
+            if (formData.formType) {
+                switch(formData.formType) {
+                    case 'metal-detection':
+                        storageKey = 'qaMetalDetectionData';
+                        break;
+                    case 'daily-hygiene':
+                        storageKey = 'qaDailyHygieneData';
+                        break;
+                    case 'ghp-hygiene':
+                        storageKey = 'qaGHPHygieneData';
+                        break;
+                    case 'product-changeover':
+                        storageKey = 'qaProductChangeoverData';
+                        break;
+                    default:
+                        storageKey = 'qaProcessData';
+                }
+            }
+            
             // Get existing data
-            let qaProcessData = localStorage.getItem('qaProcessData');
-            qaProcessData = qaProcessData ? JSON.parse(qaProcessData) : [];
+            let existingData = localStorage.getItem(storageKey);
+            existingData = existingData ? JSON.parse(existingData) : [];
             
             // Add new record
-            qaProcessData.push(formData);
+            existingData.push(formData);
             
             // Keep only last 100 records to avoid localStorage limit
-            if (qaProcessData.length > 100) {
-                qaProcessData = qaProcessData.slice(-100);
+            if (existingData.length > 100) {
+                existingData = existingData.slice(-100);
             }
             
             // Save back to localStorage
-            localStorage.setItem('qaProcessData', JSON.stringify(qaProcessData));
+            localStorage.setItem(storageKey, JSON.stringify(existingData));
             
-            console.log('Data saved to localStorage:', formData.id);
+            console.log(`Data saved to localStorage (${storageKey}):`, formData.id);
             return { success: true, id: formData.id };
         } catch (error) {
             console.error('Error saving to localStorage:', error);
@@ -333,9 +354,25 @@ class SharePointManager {
         }
     }
 
-    getLocalStorageItems() {
+    getLocalStorageItems(type = 'process') {
         try {
-            const data = localStorage.getItem('qaProcessData');
+            let storageKey = 'qaProcessData';
+            switch(type) {
+                case 'metal-detection':
+                    storageKey = 'qaMetalDetectionData';
+                    break;
+                case 'daily-hygiene':
+                    storageKey = 'qaDailyHygieneData';
+                    break;
+                case 'ghp-hygiene':
+                    storageKey = 'qaGHPHygieneData';
+                    break;
+                case 'product-changeover':
+                    storageKey = 'qaProductChangeoverData';
+                    break;
+            }
+            
+            const data = localStorage.getItem(storageKey);
             return data ? JSON.parse(data).reverse() : []; // Reverse to show newest first
         } catch (error) {
             console.error('Error reading from localStorage:', error);
@@ -344,6 +381,17 @@ class SharePointManager {
     }
 
     mapFormDataToSharePoint(formData) {
+        // Determine form type and map accordingly
+        if (formData.feSize !== undefined || formData.inoxSize !== undefined) {
+            // Metal Detection Form
+            return this.mapMetalDetectionData(formData);
+        } else {
+            // Process Data Form
+            return this.mapProcessData(formData);
+        }
+    }
+
+    mapProcessData(formData) {
         // Map form fields to SharePoint internal column names
         const mappedData = {
             Title: `${formData.site}-${formData.lineSX}-${new Date().toISOString()}`,
@@ -395,6 +443,19 @@ class SharePointManager {
             mappedData['_x0110__x1ed9__x0020_d_x00e0_y_x'] = parseFloat(formData.doDayLaBot);
         }
 
+        // NEW FIELDS - Ngoại quan sợi
+        if (formData.ngoaiQuanSoi) {
+            mappedData['Ngo_x1ea1_i_x0020_quan_x0020_s_x01'] = formData.ngoaiQuanSoi;
+        }
+        if (formData.moTaSoi) {
+            mappedData['M_x00f4__x0020_t_x1ea3__x0020_s_'] = formData.moTaSoi;
+        }
+
+        // NEW FIELDS - Áp suất hơi van thành phần
+        if (formData.apSuatHoiVan) {
+            mappedData['_x00c1_p_x0020_su_x1ea5_t_x0020'] = formData.apSuatHoiVan;
+        }
+
         // Temperature data
         const tempFields = [
             { form: 'nhietDauTrai', sp: 'Nhi_x1ec7_t_x0020__x0111__x1ea7_u' },
@@ -415,6 +476,16 @@ class SharePointManager {
             }
         });
 
+        // NEW FIELDS - Ngoại quan phôi mì
+        if (formData.ngoaiQuanPhoiMi) {
+            mappedData['Ngo_x1ea1_i_x0020_quan_x0020_ph_x'] = formData.ngoaiQuanPhoiMi;
+        }
+
+        // NEW FIELDS - Van châm BHA/BHT
+        if (formData.vanChamBHA) {
+            mappedData['Van_x0020_ch_x00e2_m_x0020_BHA'] = formData.vanChamBHA;
+        }
+
         // Sensory evaluation
         if (formData.camQuanCoTinh) {
             mappedData['C_x1ea3_m_x0020_quan_x0020_c_x01'] = parseFloat(formData.camQuanCoTinh);
@@ -429,13 +500,103 @@ class SharePointManager {
             mappedData['C_x1ea3_m_x0020_quan_x0020_v_x1ec'] = parseFloat(formData.camQuanVi);
         }
 
+        // NEW FIELDS - Mô tả cảm quan
+        if (formData.moTaCamQuan) {
+            mappedData['M_x00f4__x0020_t_x1ea3__x0020_c_'] = formData.moTaCamQuan;
+        }
+
         return mappedData;
     }
 
-    async getRecentItems(count = 20) {
+    mapMetalDetectionData(formData) {
+        // Map metal detection form fields to SharePoint internal column names
+        const mappedData = {
+            Title: `MD-${formData.site}-${formData.line}-${new Date().toISOString()}`,
+            Site: formData.site,
+            Line: formData.line
+        };
+
+        // Basic info
+        if (formData.maNhanVien) {
+            mappedData['M_x00e3__x0020_nh_x00e2_n_x0020_QA'] = formData.maNhanVien;
+        }
+        if (formData.ngaySanXuat) {
+            mappedData['Ng_x00e0_y_x0020_s_x1ea3_n_x002'] = formData.ngaySanXuat;
+        }
+        if (formData.gioKiemTra) {
+            mappedData['Gi_x1edd__x0020_ki_x1ec3_m_x003'] = formData.gioKiemTra;
+        }
+
+        // Detection settings
+        if (formData.donViQuaMayDo) {
+            mappedData['_x0110_n_x0020_v_x1ecb__x0020_'] = formData.donViQuaMayDo;
+        }
+        if (formData.nguoiNhiemTu) {
+            mappedData['Ng_x01b0__x1edd_i_x0020_nhi_x1ec5_'] = parseFloat(formData.nguoiNhiemTu);
+        }
+        if (formData.lyDoThayDoi) {
+            mappedData['L_x00fd__x0020_do_x0020_thay_x00'] = formData.lyDoThayDoi;
+        }
+
+        // NEW FIELDS - Fe testing
+        if (formData.feSize) {
+            mappedData['K_x00ed_ch_x0020_th_x01b0__x1edb_c0'] = parseFloat(formData.feSize);
+        }
+        if (formData.feSamples) {
+            mappedData['S_x1ed1__x0020_m_x1eabu_x0020_Fe_'] = parseInt(formData.feSamples);
+        }
+
+        // NEW FIELDS - Inox testing
+        if (formData.inoxSize) {
+            mappedData['K_x00ed_ch_x0020_th_x01b0__x1edb_c1'] = parseFloat(formData.inoxSize);
+        }
+        if (formData.inoxSamples) {
+            mappedData['S_x1ed1__x0020_m_x1eabu_x0020_In_'] = parseInt(formData.inoxSamples);
+        }
+
+        // NEW FIELDS - Metal color testing
+        if (formData.metalSize) {
+            mappedData['K_x00ed_ch_x0020_th_x01b0__x1edb_c2'] = parseFloat(formData.metalSize);
+        }
+        if (formData.metalSamples) {
+            mappedData['S_x1ed1__x0020_m_x1eabu_x0020_Ki_'] = parseInt(formData.metalSamples);
+        }
+
+        // NEW FIELDS - Wire testing
+        if (formData.wireSize) {
+            mappedData['K_x00ed_ch_x0020_th_x01b0__x1edb_c3'] = parseFloat(formData.wireSize);
+        }
+        if (formData.wireSamples) {
+            mappedData['S_x1ed1__x0020_m_x1eabu_x0020_gi_'] = parseInt(formData.wireSamples);
+        }
+
+        // NEW FIELDS - Test results
+        if (formData.ketLuanTest) {
+            mappedData['K_x1ebf_t_x0020_lu_x1ead_n_x0020_1'] = formData.ketLuanTest;
+        }
+        if (formData.soLuongDa) {
+            mappedData['S_x1ed1__x0020_l_x01b0__x1ee3_ng_0'] = parseInt(formData.soLuongDa);
+        }
+        if (formData.soLuongDung) {
+            mappedData['S_x1ed1__x0020_l_x01b0__x1ee3_ng_1'] = parseInt(formData.soLuongDung);
+        }
+        if (formData.nguonNhiem) {
+            mappedData['Ngu_x1ed3_n_x0020_nhi_x1ec5_m'] = parseFloat(formData.nguonNhiem);
+        }
+        if (formData.moTaKimLoai) {
+            mappedData['M_x00f4__x0020_t_x1ea3__x0020_ki_'] = formData.moTaKimLoai;
+        }
+        if (formData.thamTraPQCI) {
+            mappedData['Th_x1ea9_m_x0020_tra_x0020_PQCI'] = formData.thamTraPQCI;
+        }
+
+        return mappedData;
+    }
+
+    async getRecentItems(count = 20, type = 'process') {
         if (this.isDevelopmentMode) {
             // Return data from localStorage
-            return this.getLocalStorageItems().slice(0, count);
+            return this.getLocalStorageItems(type).slice(0, count);
         }
         
         try {
@@ -517,6 +678,8 @@ class SharePointManager {
                 brixSeasoning: '20',
                 ngoaiQuanSeasoning: 'Đạt',
                 doDayLaBot: '1.5',
+                ngoaiQuanSoi: 'Đạt',
+                apSuatHoiVan: 'Đạt',
                 nhietDauTrai: '168',
                 nhietDauPhai: '170',
                 nhietGiua1Trai: '172',
@@ -527,10 +690,13 @@ class SharePointManager {
                 nhietGiua3Phai: '171',
                 nhietCuoiTrai: '165',
                 nhietCuoiPhai: '167',
+                ngoaiQuanPhoiMi: 'Đạt',
+                vanChamBHA: 'Đạt',
                 camQuanCoTinh: '9.2',
                 camQuanMau: '9.1',
                 camQuanMui: '9.3',
-                camQuanVi: '9.2'
+                camQuanVi: '9.2',
+                moTaCamQuan: 'Cảm quan tốt, đạt tiêu chuẩn'
             },
             {
                 site: 'MSI',
@@ -544,6 +710,8 @@ class SharePointManager {
                 brixSeasoning: '23',
                 ngoaiQuanSeasoning: 'Đạt',
                 doDayLaBot: '1.6',
+                ngoaiQuanSoi: 'Đạt',
+                apSuatHoiVan: 'Đạt',
                 nhietDauTrai: '170',
                 nhietDauPhai: '172',
                 nhietGiua1Trai: '175',
@@ -554,6 +722,8 @@ class SharePointManager {
                 nhietGiua3Phai: '174',
                 nhietCuoiTrai: '167',
                 nhietCuoiPhai: '169',
+                ngoaiQuanPhoiMi: 'Đạt',
+                vanChamBHA: 'Đạt',
                 camQuanCoTinh: '9.4',
                 camQuanMau: '9.3',
                 camQuanMui: '9.5',
@@ -571,6 +741,10 @@ class SharePointManager {
 
     clearLocalStorage() {
         localStorage.removeItem('qaProcessData');
+        localStorage.removeItem('qaMetalDetectionData');
+        localStorage.removeItem('qaDailyHygieneData');
+        localStorage.removeItem('qaGHPHygieneData');
+        localStorage.removeItem('qaProductChangeoverData');
         localStorage.removeItem('offlineData');
         console.log('Cleared localStorage');
     }
