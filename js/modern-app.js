@@ -423,17 +423,81 @@ class ModernApp {
         }
     }
 
+    // Toast notification system
+    showToast(title, message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const bgColor = {
+            'success': 'success',
+            'error': 'danger',
+            'warning': 'warning',
+            'info': 'primary'
+        }[type] || 'primary';
+
+        const iconClass = {
+            'success': 'check-circle-fill',
+            'error': 'exclamation-triangle-fill',
+            'warning': 'exclamation-triangle-fill',
+            'info': 'info-circle-fill'
+        }[type] || 'info-circle-fill';
+
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-bg-${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-${iconClass} me-2"></i>
+                            <div>
+                                <div class="fw-bold">${title}</div>
+                                <div>${message}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        // Add toast to container
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+        // Initialize and show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: type === 'error' ? 6000 : 4000
+        });
+
+        toast.show();
+
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+
     // Public methods for components
     viewRecord(id, type) {
         console.log('View record:', id, type);
         // Implementation for viewing record details
-        alert(`Xem chi tiết record: ${id}`);
+        this.showToast('Thông báo', `Xem chi tiết record: ${id}`, 'info');
     }
 
     deleteRecord(id) {
         if (confirm('Bạn có chắc muốn xóa bản ghi này?')) {
             console.log('Delete record:', id);
             // Implementation for deleting record
+            this.showToast('Thành công', 'Đã xóa bản ghi', 'success');
             this.loadTableData(); // Refresh table
         }
     }
