@@ -1,9 +1,11 @@
-// Modern App Controller - Updated
+// Modern App Controller - Updated with Authentication
 class ModernApp {
     constructor() {
         this.currentPage = 'dashboard';
         this.isDarkMode = false;
         this.sidebarCollapsed = false;
+        this.isAuthenticated = false;
+        this.currentUser = null;
     }
 
     async initialize() {
@@ -16,21 +18,16 @@ class ModernApp {
             // Initialize authentication (mock for dev)
             await this.initializeAuth();
             
-            // Initialize SharePoint/Mock data
-            await this.initializeData();
+            // Check if user is already logged in
+            const isLoggedIn = await this.checkExistingSession();
             
-            // Setup navigation
-            this.setupNavigation();
-            
-            // Setup UI controls
-            this.setupUIControls();
-            
-            // Load initial page
-            await this.navigateTo('dashboard');
-            
-            // Show main app
-            this.showLoading(false);
-            document.getElementById('mainApp').style.display = 'block';
+            if (isLoggedIn) {
+                // User is logged in, proceed to main app
+                await this.initializeMainApp();
+            } else {
+                // Show login screen
+                await this.showLoginScreen();
+            }
             
             console.log('App initialized successfully');
         } catch (error) {
@@ -39,16 +36,86 @@ class ModernApp {
         }
     }
 
-    async initializeAuth() {
-        // Mock authentication for development
-        const userInfo = {
-            name: 'QA Manager',
-            email: 'qa@company.com',
-            role: 'Assistant QA Manager'
-        };
+    async checkExistingSession() {
+        try {
+            // Check if user session exists
+            this.currentUser = employeeManager.getCurrentUser();
+            
+            if (this.currentUser) {
+                console.log('Found existing session:', this.currentUser.name);
+                this.isAuthenticated = true;
+                return true;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Session check failed:', error);
+            return false;
+        }
+    }
+
+    async showLoginScreen() {
+        // Hide main app and show login
+        document.getElementById('mainApp').style.display = 'none';
         
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
-        document.getElementById('userName').textContent = userInfo.name;
+        // Create login container if not exists
+        let loginContainer = document.getElementById('loginContainer');
+        if (!loginContainer) {
+            loginContainer = document.createElement('div');
+            loginContainer.id = 'loginContainer';
+            document.body.appendChild(loginContainer);
+        }
+        
+        loginContainer.style.display = 'block';
+        
+        // Load login component
+        await componentLoader.load('login', loginContainer);
+        
+        // Hide loading screen
+        this.showLoading(false);
+    }
+
+    async initializeMainApp() {
+        // Initialize SharePoint/Mock data
+        await this.initializeData();
+        
+        // Setup navigation based on user role
+        this.setupNavigation();
+        
+        // Setup UI controls
+        this.setupUIControls();
+        
+        // Update user info in UI
+        this.updateUserInterface();
+        
+        // Load initial page
+        await this.navigateTo('dashboard');
+        
+        // Show main app
+        this.showLoading(false);
+        document.getElementById('mainApp').style.display = 'block';
+        
+        // Hide login container
+        const loginContainer = document.getElementById('loginContainer');
+        if (loginContainer) {
+            loginContainer.style.display = 'none';
+        }
+    }
+
+    async initializeAfterLogin() {
+        // Called from login component after successful login
+        this.currentUser = employeeManager.getCurrentUser();
+        this.isAuthenticated = true;
+        
+        console.log('Login successful:', this.currentUser.name);
+        
+        // Initialize main app
+        await this.initializeMainApp();
+    }
+
+    async initializeAuth() {
+        // Mock authentication for development - already handled by EmployeeManager
+        console.log('Authentication system initialized');
     }
 
     async initializeData() {
@@ -59,39 +126,8 @@ class ModernApp {
     }
 
     setupNavigation() {
-        // Navigation structure - UPDATED
-        const navigation = [
-            {
-                section: 'DASHBOARD',
-                items: [
-                    { id: 'dashboard', label: 'Tổng quan', icon: 'speedometer2' }
-                ]
-            },
-            {
-                section: 'NHẬP DỮ LIỆU',
-                items: [
-                    { id: 'process-data', label: 'Data công nghệ mì', icon: 'clipboard-data' }, // UPDATED
-                    { id: 'pho-technology', label: 'Data công nghệ phở', icon: 'clipboard-data-fill' }, // NEW
-                    { id: 'metal-detection', label: 'Kiểm soát máy dò kim loại', icon: 'shield-check' },
-                    { id: 'daily-hygiene', label: 'Đánh giá vệ sinh hàng ngày', icon: 'droplet-half' },
-                    { id: 'ghp-hygiene', label: 'Đánh giá GHP khi ngưng line >12h', icon: 'clock-history' },
-                    { id: 'product-changeover', label: 'Checklist chuyển đổi sản phẩm', icon: 'arrow-repeat' }
-                ]
-            },
-            {
-                section: 'BÁO CÁO',
-                items: [
-                    { id: 'data-view', label: 'Xem dữ liệu', icon: 'table' },
-                    { id: 'analytics', label: 'Phân tích', icon: 'graph-up' }
-                ]
-            },
-            {
-                section: 'CÀI ĐẶT',
-                items: [
-                    { id: 'parameters', label: 'Thông số', icon: 'gear' }
-                ]
-            }
-        ];
+        // Navigation structure - Updated with role-based access
+        const navigation = this.getNavigationByRole();
 
         // Render navigation
         const navContainer = document.getElementById('sidebarNav');
@@ -103,6 +139,7 @@ class ModernApp {
                        data-page="${item.id}">
                         <i class="bi bi-${item.icon}"></i>
                         <span>${item.label}</span>
+                        ${item.badge ? `<span class="badge bg-${item.badge.color} ms-auto">${item.badge.text}</span>` : ''}
                     </a>
                 `).join('')}
             </div>
@@ -118,6 +155,115 @@ class ModernApp {
                 }
             });
         });
+    }
+
+    getNavigationByRole() {
+        const baseNavigation = [
+            {
+                section: 'DASHBOARD',
+                items: [
+                    { id: 'dashboard', label: 'Tổng quan', icon: 'speedometer2' }
+                ]
+            },
+            {
+                section: 'NHẬP DỮ LIỆU',
+                items: [
+                    { id: 'process-data', label: 'Data công nghệ mì', icon: 'clipboard-data' },
+                    { id: 'pho-technology', label: 'Data công nghệ phở', icon: 'clipboard-data-fill' },
+                    { id: 'metal-detection', label: 'Kiểm soát máy dò kim loại', icon: 'shield-check' },
+                    { id: 'daily-hygiene', label: 'Đánh giá vệ sinh hàng ngày', icon: 'droplet-half' },
+                    { id: 'ghp-hygiene', label: 'Đánh giá GHP khi ngưng line >12h', icon: 'clock-history' },
+                    { id: 'product-changeover', label: 'Checklist chuyển đổi sản phẩm', icon: 'arrow-repeat' }
+                ]
+            },
+            {
+                section: 'BÁO CÁO',
+                items: [
+                    { id: 'data-view', label: 'Xem dữ liệu', icon: 'table' },
+                    { id: 'analytics', label: 'Phân tích', icon: 'graph-up' }
+                ]
+            }
+        ];
+
+        // Add admin section for managers
+        if (this.currentUser && employeeManager.isManager()) {
+            baseNavigation.push({
+                section: 'QUẢN TRỊ',
+                items: [
+                    { 
+                        id: 'user-management', 
+                        label: 'Quản lý người dùng', 
+                        icon: 'people',
+                        badge: { text: 'Admin', color: 'danger' }
+                    },
+                    { 
+                        id: 'master-data', 
+                        label: 'Dữ liệu chính', 
+                        icon: 'database',
+                        badge: { text: 'Admin', color: 'danger' }
+                    },
+                    { id: 'parameters', label: 'Thông số hệ thống', icon: 'gear' }
+                ]
+            });
+        }
+
+        // Filter navigation based on user permissions and group
+        if (this.currentUser) {
+            const userGroup = this.currentUser.group;
+            
+            // Filter forms based on user group
+            if (userGroup === 'Mì') {
+                // Mì group can access mì and general forms
+                baseNavigation[1].items = baseNavigation[1].items.filter(item => 
+                    !item.id.includes('pho') // Hide pho-related forms
+                );
+            } else if (userGroup === 'Phở') {
+                // Phở group can access phở and general forms
+                baseNavigation[1].items = baseNavigation[1].items.filter(item => 
+                    !item.id.includes('process-data') // Hide mì-specific forms
+                );
+            }
+            // Managers and "Chung" group can see all forms
+        }
+
+        return baseNavigation;
+    }
+
+    updateUserInterface() {
+        if (!this.currentUser) return;
+
+        // Update user name in sidebar
+        const userName = document.getElementById('userName');
+        if (userName) {
+            userName.textContent = this.currentUser.name;
+        }
+
+        // Update user role badge
+        const userRoleElement = document.querySelector('.user-role');
+        if (userRoleElement) {
+            userRoleElement.textContent = `${this.currentUser.role} - ${this.currentUser.site}`;
+        }
+
+        // Update DEV badge for managers
+        const devBadge = document.querySelector('.sidebar-header .badge');
+        if (devBadge && employeeManager.isManager()) {
+            devBadge.textContent = 'ADMIN';
+            devBadge.className = 'badge bg-danger ms-auto';
+        }
+
+        // Add user info to breadcrumb if needed
+        this.addUserContextToBreadcrumb();
+    }
+
+    addUserContextToBreadcrumb() {
+        const breadcrumb = document.getElementById('breadcrumb');
+        if (breadcrumb && this.currentUser) {
+            // Add site info to breadcrumb
+            const siteInfo = document.createElement('li');
+            siteInfo.className = 'breadcrumb-item';
+            siteInfo.innerHTML = `<small class="text-muted">${this.currentUser.site}</small>`;
+            breadcrumb.insertBefore(siteInfo, breadcrumb.lastElementChild);
+        }
     }
 
     setupUIControls() {
@@ -144,6 +290,18 @@ class ModernApp {
     async navigateTo(page) {
         console.log(`Navigating to: ${page}`);
         
+        // Check authentication
+        if (!this.isAuthenticated) {
+            await this.showLoginScreen();
+            return;
+        }
+
+        // Check permissions for admin pages
+        if (['user-management', 'master-data'].includes(page) && !employeeManager.isManager()) {
+            this.showToast('Lỗi', 'Bạn không có quyền truy cập trang này', 'error');
+            return;
+        }
+
         // Update active nav
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
@@ -167,7 +325,7 @@ class ModernApp {
                 case 'process-data':
                     await componentLoader.load('process-data', container);
                     break;
-                case 'pho-technology': // NEW
+                case 'pho-technology':
                     await componentLoader.load('pho-technology', container);
                     break;
                 case 'metal-detection':
@@ -187,6 +345,12 @@ class ModernApp {
                     break;
                 case 'analytics':
                     await this.loadAnalytics(container);
+                    break;
+                case 'user-management':
+                    await this.loadUserManagement(container);
+                    break;
+                case 'master-data':
+                    await this.loadMasterDataManagement(container);
                     break;
                 case 'parameters':
                     await this.loadParameters(container);
@@ -210,22 +374,139 @@ class ModernApp {
     updateBreadcrumb(page) {
         const pageNames = {
             'dashboard': 'Dashboard',
-            'process-data': 'Data công nghệ mì', // UPDATED
-            'pho-technology': 'Data công nghệ phở', // NEW
+            'process-data': 'Data công nghệ mì',
+            'pho-technology': 'Data công nghệ phở',
             'metal-detection': 'Kiểm soát máy dò kim loại',
             'daily-hygiene': 'Đánh giá vệ sinh hàng ngày',
             'ghp-hygiene': 'Đánh giá GHP khi ngưng line >12h',
             'product-changeover': 'Checklist chuyển đổi sản phẩm',
             'data-view': 'Xem dữ liệu',
             'analytics': 'Phân tích',
-            'parameters': 'Thông số'
+            'user-management': 'Quản lý người dùng',
+            'master-data': 'Dữ liệu chính',
+            'parameters': 'Thông số hệ thống'
         };
 
         document.getElementById('currentPage').textContent = pageNames[page] || page;
     }
 
+    async loadUserManagement(container) {
+        if (!employeeManager.isManager()) {
+            this.showAccessDenied(container);
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="fade-in">
+                <div class="page-header mb-4">
+                    <h2 class="page-title">
+                        <i class="bi bi-people me-2"></i>
+                        Quản lý người dùng
+                    </h2>
+                    <p class="text-muted">Quản lý thông tin nhân viên và phân quyền</p>
+                </div>
+                
+                <div class="modern-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Danh sách nhân viên - Site: ${this.currentUser.site}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Mã NV</th>
+                                        <th>Họ tên</th>
+                                        <th>Site</th>
+                                        <th>Nhóm</th>
+                                        <th>Vai trò</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${this.renderEmployeeTable()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderEmployeeTable() {
+        const employees = employeeManager.getEmployeesBySite(this.currentUser.site);
+        
+        return employees.map(emp => `
+            <tr>
+                <td><code>${emp.id}</code></td>
+                <td>${emp.name}</td>
+                <td><span class="badge bg-primary">${emp.site}</span></td>
+                <td><span class="badge bg-secondary">${emp.group}</span></td>
+                <td>
+                    <span class="badge ${emp.role === 'Quản lý' ? 'bg-danger' : 'bg-success'}">
+                        ${emp.role}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${emp.active ? 'bg-success' : 'bg-secondary'}">
+                        ${emp.active ? 'Hoạt động' : 'Tạm khóa'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="app.viewEmployee('${emp.id}')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${employeeManager.hasPermission('admin') ? `
+                        <button class="btn btn-sm btn-outline-warning" onclick="app.editEmployee('${emp.id}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async loadMasterDataManagement(container) {
+        if (!employeeManager.isManager()) {
+            this.showAccessDenied(container);
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="fade-in">
+                <div class="page-header mb-4">
+                    <h2 class="page-title">
+                        <i class="bi bi-database me-2"></i>
+                        Quản lý dữ liệu chính
+                    </h2>
+                    <p class="text-muted">Upload và quản lý các file dữ liệu master</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Module này đang được phát triển. Sẽ có chức năng upload Excel/CSV files.
+                </div>
+            </div>
+        `;
+    }
+
+    showAccessDenied(container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-shield-x text-danger" style="font-size: 4rem;"></i>
+                <h3 class="mt-3 text-danger">Không có quyền truy cập</h3>
+                <p class="text-muted">Bạn không có quyền truy cập vào trang này</p>
+                <button class="btn btn-primary" onclick="app.navigateTo('dashboard')">
+                    Về trang chủ
+                </button>
+            </div>
+        `;
+    }
+
     async loadDataView(container) {
-        // Simple data view implementation - UPDATED to include pho data
+        // Existing implementation with role-based filtering
         container.innerHTML = `
             <div class="fade-in">
                 <div class="page-header mb-4">
@@ -233,7 +514,7 @@ class ModernApp {
                         <i class="bi bi-table me-2"></i>
                         Xem dữ liệu
                     </h2>
-                    <p class="text-muted">Xem và quản lý dữ liệu đã nhập</p>
+                    <p class="text-muted">Xem và quản lý dữ liệu đã nhập - Site: ${this.currentUser.site}</p>
                 </div>
                 
                 <div class="modern-card">
@@ -246,13 +527,14 @@ class ModernApp {
                                         <th>Loại</th>
                                         <th>Site</th>
                                         <th>Line</th>
+                                        <th>Người nhập</th>
                                         <th>Trạng thái</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dataTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center">
+                                        <td colspan="7" class="text-center">
                                             <div class="spinner-border text-primary" role="status">
                                                 <span class="visually-hidden">Loading...</span>
                                             </div>
@@ -266,31 +548,16 @@ class ModernApp {
             </div>
         `;
 
-        // Load data
         setTimeout(() => this.loadTableData(), 100);
     }
 
     loadTableData() {
-        // Get all data from localStorage - UPDATED to include pho data
-        const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
-        const phoData = JSON.parse(localStorage.getItem('qaPhoTechnologyData') || '[]'); // NEW
-        const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
-        const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
-        const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
-        const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
-
-        const allData = [
-            ...processData.map(d => ({ ...d, type: 'Data công nghệ mì', badge: 'primary' })), // UPDATED
-            ...phoData.map(d => ({ ...d, type: 'Data công nghệ phở', badge: 'info' })), // NEW
-            ...metalData.map(d => ({ ...d, type: 'Metal Detection', badge: 'success' })),
-            ...hygieneData.map(d => ({ ...d, type: 'Daily Hygiene', badge: 'info' })),
-            ...ghpData.map(d => ({ ...d, type: 'GHP Hygiene', badge: 'warning' })),
-            ...changeoverData.map(d => ({ ...d, type: 'Product Changeover', badge: 'secondary' }))
-        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Filter data by user's site and permissions
+        const allData = this.getAllDataFilteredByUser();
 
         const tbody = document.getElementById('dataTableBody');
         if (allData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Chưa có dữ liệu</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Chưa có dữ liệu</td></tr>';
             return;
         }
 
@@ -300,17 +567,45 @@ class ModernApp {
                 <td><span class="badge bg-${item.badge}">${item.type}</span></td>
                 <td>${item.site || '-'}</td>
                 <td>${item.line || item.lineSX || '-'}</td>
+                <td><small>${item.maNhanVien || 'N/A'}</small></td>
                 <td><span class="badge bg-success">Đã lưu</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" onclick="app.viewRecord('${item.id}')">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="app.deleteRecord('${item.id}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    ${employeeManager.hasPermission('delete') ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteRecord('${item.id}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
                 </td>
             </tr>
         `).join('');
+    }
+
+    getAllDataFilteredByUser() {
+        const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+        const phoData = JSON.parse(localStorage.getItem('qaPhoTechnologyData') || '[]');
+        const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
+        const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+        const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
+        const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
+
+        let allData = [
+            ...processData.map(d => ({ ...d, type: 'Data công nghệ mì', badge: 'primary' })),
+            ...phoData.map(d => ({ ...d, type: 'Data công nghệ phở', badge: 'info' })),
+            ...metalData.map(d => ({ ...d, type: 'Metal Detection', badge: 'success' })),
+            ...hygieneData.map(d => ({ ...d, type: 'Daily Hygiene', badge: 'info' })),
+            ...ghpData.map(d => ({ ...d, type: 'GHP Hygiene', badge: 'warning' })),
+            ...changeoverData.map(d => ({ ...d, type: 'Product Changeover', badge: 'secondary' }))
+        ];
+
+        // Filter by user's site unless they're a manager
+        if (!employeeManager.isManager()) {
+            allData = allData.filter(item => item.site === this.currentUser.site);
+        }
+
+        return allData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     }
 
     async loadAnalytics(container) {
@@ -321,12 +616,12 @@ class ModernApp {
                         <i class="bi bi-graph-up me-2"></i>
                         Phân tích dữ liệu
                     </h2>
-                    <p class="text-muted">Phân tích và báo cáo thống kê</p>
+                    <p class="text-muted">Phân tích và báo cáo thống kê - Site: ${this.currentUser.site}</p>
                 </div>
                 
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    Module phân tích đang được phát triển. Sẽ sớm có các biểu đồ và báo cáo chi tiết.
+                    Module phân tích đang được phát triển. Sẽ sớm có các biểu đồ và báo cáo chi tiết theo site.
                 </div>
             </div>
         `;
@@ -338,9 +633,9 @@ class ModernApp {
                 <div class="page-header mb-4">
                     <h2 class="page-title">
                         <i class="bi bi-gear me-2"></i>
-                        Cài đặt thông số
+                        Thông số hệ thống
                     </h2>
-                    <p class="text-muted">Quản lý thông số hệ thống</p>
+                    <p class="text-muted">Cài đặt và thông số hệ thống</p>
                 </div>
                 
                 <div class="alert alert-info">
@@ -369,11 +664,9 @@ class ModernApp {
         const mainWrapper = document.getElementById('mainWrapper');
         
         if (window.innerWidth <= 768) {
-            // Mobile: show/hide sidebar
             sidebar.classList.toggle('show');
             document.getElementById('sidebarOverlay').classList.toggle('show');
         } else {
-            // Desktop: collapse/expand
             sidebar.classList.toggle('collapsed');
             mainWrapper.classList.toggle('expanded');
             this.sidebarCollapsed = !this.sidebarCollapsed;
@@ -403,8 +696,17 @@ class ModernApp {
 
     handleLogout() {
         if (confirm('Bạn có chắc muốn đăng xuất?')) {
-            localStorage.clear();
-            window.location.reload();
+            // Logout from employee manager
+            employeeManager.logout();
+            
+            // Reset app state
+            this.isAuthenticated = false;
+            this.currentUser = null;
+            
+            // Show login screen
+            this.showLoginScreen();
+            
+            this.showToast('Thông báo', 'Đã đăng xuất thành công', 'info');
         }
     }
 
@@ -430,9 +732,7 @@ class ModernApp {
         }
     }
 
-    // Toast notification system
     showToast(title, message, type = 'info') {
-        // Create toast container if it doesn't exist
         let toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -442,7 +742,6 @@ class ModernApp {
             document.body.appendChild(toastContainer);
         }
 
-        // Create toast element
         const toastId = 'toast-' + Date.now();
         const bgColor = {
             'success': 'success',
@@ -475,10 +774,8 @@ class ModernApp {
             </div>
         `;
 
-        // Add toast to container
         toastContainer.insertAdjacentHTML('beforeend', toastHtml);
 
-        // Initialize and show toast
         const toastElement = document.getElementById(toastId);
         const toast = new bootstrap.Toast(toastElement, {
             autohide: true,
@@ -487,7 +784,6 @@ class ModernApp {
 
         toast.show();
 
-        // Remove toast element after it's hidden
         toastElement.addEventListener('hidden.bs.toast', () => {
             toastElement.remove();
         });
@@ -496,17 +792,30 @@ class ModernApp {
     // Public methods for components
     viewRecord(id, type) {
         console.log('View record:', id, type);
-        // Implementation for viewing record details
         this.showToast('Thông báo', `Xem chi tiết record: ${id}`, 'info');
     }
 
     deleteRecord(id) {
+        if (!employeeManager.hasPermission('delete')) {
+            this.showToast('Lỗi', 'Bạn không có quyền xóa dữ liệu', 'error');
+            return;
+        }
+
         if (confirm('Bạn có chắc muốn xóa bản ghi này?')) {
             console.log('Delete record:', id);
-            // Implementation for deleting record
             this.showToast('Thành công', 'Đã xóa bản ghi', 'success');
-            this.loadTableData(); // Refresh table
+            this.loadTableData();
         }
+    }
+
+    viewEmployee(id) {
+        console.log('View employee:', id);
+        this.showToast('Thông báo', `Xem thông tin nhân viên: ${id}`, 'info');
+    }
+
+    editEmployee(id) {
+        console.log('Edit employee:', id);
+        this.showToast('Thông báo', `Chỉnh sửa nhân viên: ${id}`, 'info');
     }
 }
 
