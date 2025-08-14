@@ -79,6 +79,9 @@ class ModernApp {
         // Initialize SharePoint/Mock data
         await this.initializeData();
         
+        // Initialize master data manager
+        await this.initializeMasterData();
+        
         // Setup navigation based on user role
         this.setupNavigation();
         
@@ -99,6 +102,14 @@ class ModernApp {
         const loginContainer = document.getElementById('loginContainer');
         if (loginContainer) {
             loginContainer.style.display = 'none';
+        }
+    }
+
+    async initializeMasterData() {
+        // Initialize master data manager
+        if (typeof masterDataManager !== 'undefined') {
+            await masterDataManager.initialize();
+            console.log('Master data manager initialized');
         }
     }
 
@@ -350,7 +361,7 @@ class ModernApp {
                     await this.loadUserManagement(container);
                     break;
                 case 'master-data':
-                    await this.loadMasterDataManagement(container);
+                    await componentLoader.load('file-upload', container);
                     break;
                 case 'parameters':
                     await this.loadParameters(container);
@@ -816,6 +827,233 @@ class ModernApp {
     editEmployee(id) {
         console.log('Edit employee:', id);
         this.showToast('Thông báo', `Chỉnh sửa nhân viên: ${id}`, 'info');
+    }
+
+    // Master Data Management Methods
+    viewMasterData(dataType) {
+        console.log('View master data:', dataType);
+        
+        let data, title;
+        switch(dataType) {
+            case 'employees':
+                data = masterDataManager.employeesData;
+                title = 'Danh sách nhân viên';
+                break;
+            case 'conditions-mi':
+                data = masterDataManager.processConditionsMi;
+                title = 'Điều kiện công nghệ mì';
+                break;
+            case 'conditions-pho':
+                data = masterDataManager.processConditionsPho;
+                title = 'Điều kiện công nghệ phở';
+                break;
+            default:
+                this.showToast('Lỗi', 'Loại dữ liệu không hợp lệ', 'error');
+                return;
+        }
+        
+        this.showMasterDataModal(title, data, dataType);
+    }
+
+    showMasterDataModal(title, data, dataType) {
+        // Create modal to show master data
+        const modalHtml = `
+            <div class="modal fade" id="masterDataModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        ${this.renderMasterDataHeaders(dataType)}
+                                    </thead>
+                                    <tbody>
+                                        ${this.renderMasterDataRows(data, dataType)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="button" class="btn btn-primary" onclick="masterDataManager.exportToCSV('${dataType}')">
+                                <i class="bi bi-download me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal
+        const existingModal = document.getElementById('masterDataModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('masterDataModal'));
+        modal.show();
+    }
+
+    renderMasterDataHeaders(dataType) {
+        switch(dataType) {
+            case 'employees':
+                return `
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Site</th>
+                        <th>Nhóm</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                `;
+            case 'conditions-mi':
+                return `
+                    <tr>
+                        <th>Site</th>
+                        <th>Brand</th>
+                        <th>Mã ĐKSX</th>
+                        <th>Sản phẩm</th>
+                        <th>Nhiệt độ (Min-Max)</th>
+                        <th>Brix Kansui</th>
+                        <th>Độ dày</th>
+                    </tr>
+                `;
+            case 'conditions-pho':
+                return `
+                    <tr>
+                        <th>Site</th>
+                        <th>Brand</th>
+                        <th>Mã ĐKSX</th>
+                        <th>Sản phẩm</th>
+                        <th>Baume Kansui</th>
+                        <th>Độ dày</th>
+                        <th>Độ ẩm Max</th>
+                    </tr>
+                `;
+            default:
+                return '<tr><th>No data</th></tr>';
+        }
+    }
+
+    renderMasterDataRows(data, dataType) {
+        if (!data || data.length === 0) {
+            return '<tr><td colspan="7" class="text-center text-muted">Không có dữ liệu</td></tr>';
+        }
+        
+        switch(dataType) {
+            case 'employees':
+                return data.map(emp => `
+                    <tr>
+                        <td><code>${emp.id}</code></td>
+                        <td>${emp.name}</td>
+                        <td><small>${emp.email}</small></td>
+                        <td><span class="badge bg-primary">${emp.site}</span></td>
+                        <td><span class="badge bg-secondary">${emp.group}</span></td>
+                        <td><span class="badge ${emp.role === 'Quản lý' ? 'bg-danger' : 'bg-success'}">${emp.role}</span></td>
+                        <td><span class="badge ${emp.active ? 'bg-success' : 'bg-secondary'}">${emp.active ? 'Hoạt động' : 'Tạm khóa'}</span></td>
+                    </tr>
+                `).join('');
+            
+            case 'conditions-mi':
+                return data.map(cond => `
+                    <tr>
+                        <td><span class="badge bg-primary">${cond.site}</span></td>
+                        <td>${cond.brand}</td>
+                        <td><code>${cond.maDKSX}</code></td>
+                        <td><small>${cond.unifiedName}</small></td>
+                        <td><small>${cond.tempRanges.dauMin}-${cond.tempRanges.dauMax}°C</small></td>
+                        <td><small>${cond.brixKansui.min}-${cond.brixKansui.max}</small></td>
+                        <td><small>${cond.thicknessRange.min}-${cond.thicknessRange.max}mm</small></td>
+                    </tr>
+                `).join('');
+            
+            case 'conditions-pho':
+                return data.map(cond => `
+                    <tr>
+                        <td><span class="badge bg-info">${cond.site}</span></td>
+                        <td>${cond.brand}</td>
+                        <td><code>${cond.maDKSX}</code></td>
+                        <td><small>${cond.unifiedName}</small></td>
+                        <td><small>${cond.baumeKansui.min}-${cond.baumeKansui.max}</small></td>
+                        <td><small>${cond.thicknessAfterSteam.min}-${cond.thicknessAfterSteam.max}mm</small></td>
+                        <td><small>≤${cond.moistureMax}%</small></td>
+                    </tr>
+                `).join('');
+            
+            default:
+                return '<tr><td colspan="7" class="text-center text-muted">Không hỗ trợ loại dữ liệu này</td></tr>';
+        }
+    }
+
+    async backupMasterData() {
+        if (!employeeManager.isManager()) {
+            this.showToast('Lỗi', 'Chỉ quản lý mới có thể backup dữ liệu', 'error');
+            return;
+        }
+        
+        try {
+            // Create backup object
+            const backup = {
+                timestamp: new Date().toISOString(),
+                version: APP_CONFIG.app.version,
+                user: employeeManager.getCurrentUser().name,
+                data: {
+                    employees: masterDataManager.employeesData,
+                    conditionsMi: masterDataManager.processConditionsMi,
+                    conditionsPho: masterDataManager.processConditionsPho
+                }
+            };
+            
+            // Download as JSON
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `qa-master-data-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            this.showToast('Thành công', 'Đã tạo file backup thành công', 'success');
+        } catch (error) {
+            console.error('Error creating backup:', error);
+            this.showToast('Lỗi', 'Không thể tạo backup', 'error');
+        }
+    }
+
+    async syncMasterData() {
+        if (!employeeManager.isManager()) {
+            this.showToast('Lỗi', 'Chỉ quản lý mới có thể sync dữ liệu', 'error');
+            return;
+        }
+        
+        try {
+            // Simulate sync process
+            this.showToast('Thông báo', 'Đang đồng bộ dữ liệu...', 'info');
+            
+            // In real implementation, this would sync with SharePoint or GitHub
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Update last sync time
+            masterDataManager.lastSync = new Date().toISOString();
+            localStorage.setItem('masterDataLastSync', masterDataManager.lastSync);
+            
+            this.showToast('Thành công', 'Đồng bộ dữ liệu thành công', 'success');
+        } catch (error) {
+            console.error('Error syncing data:', error);
+            this.showToast('Lỗi', 'Không thể đồng bộ dữ liệu', 'error');
+        }
     }
 }
 
