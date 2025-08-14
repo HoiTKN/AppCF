@@ -11,7 +11,7 @@ class DailyHygieneComponent extends BaseComponent {
         // Assessment questions
         this.questions = [
             { id: 'bhld', label: 'Công nhân tuân thủ BHLD (đồng phục, giày/dép, mũ, khẩu trang)', icon: 'shield-check' },
-            { id: 'khongDeoTrangSuc', label: 'Công nhân không đeo mông tay dài, không deo trang sức', icon: 'x-circle' },
+            { id: 'khongDeoTrangSuc', label: 'Công nhân không đeo móng tay dài, không đeo trang sức', icon: 'x-circle' },
             { id: 'xitConTay', label: 'Công nhân trong phòng BG đảm bảo xịt cồn tay 2h/lần', icon: 'droplet' },
             { id: 'nenPhongBG', label: 'Nền phòng BG sạch sẽ, không có phôi mì, gia vị rơi', icon: 'house-check' },
             { id: 'khongCoNVL', label: 'Không có NVL, BTP khác loại hoặc không đạt chất lượng', icon: 'box-seam' },
@@ -23,7 +23,7 @@ class DailyHygieneComponent extends BaseComponent {
             { id: 'congCuDungCu', label: 'Công cụ dụng cụ sử dụng đúng mục đích, vệ sinh sạch sẽ', icon: 'tools' },
             { id: 'khayNhua', label: 'Khay nhựa trong phòng BG phải sạch sẽ, khô ráo', icon: 'inbox' },
             { id: 'btpTP', label: 'BTP, TP phải chứa đúng màu khay để nhận dạng hàng lỗi', icon: 'tags' },
-            { id: 'khayPE', label: 'Khay chứa phôi phải được lót bao PE khi khay chống đổi', icon: 'archive' },
+            { id: 'khayPE', label: 'Khay chứa phôi phải được lót bao PE khi khay chồng đôi', icon: 'archive' },
             { id: 'heThongPhun', label: 'Hệ thống phun keo sạch sẽ, không có mùi lạ', icon: 'spray-can' },
             { id: 'kvGiaVi', label: 'KV cấp gia vị sạch sẽ, NVL để đúng layout quy định', icon: 'basket' },
             { id: 'kvThanhPham', label: 'KV thành phẩm sạch sẽ, gọn gàng, thành phẩm đúng vị trí', icon: 'box-arrow-right' }
