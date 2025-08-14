@@ -267,6 +267,12 @@ class DashboardComponent extends BaseComponent {
         const canvas = document.getElementById('activityChart');
         if (!canvas) return;
 
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            canvas.parentElement.innerHTML = '<p class="text-muted text-center">Chart.js không khả dụng</p>';
+            return;
+        }
+
         // Prepare data for last 7 days
         const last7Days = [];
         const processDataByDay = [];
