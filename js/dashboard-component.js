@@ -10,6 +10,7 @@ class DashboardComponent extends BaseComponent {
         const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
         const metalDetectionData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
         const dailyHygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+        const ghpHygieneData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
         const productChangeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
 
         // Calculate statistics
@@ -19,21 +20,24 @@ class DashboardComponent extends BaseComponent {
             totalProcess: processData.length,
             totalMetal: metalDetectionData.length,
             totalHygiene: dailyHygieneData.length,
+            totalGHP: ghpHygieneData.length,
             totalChangeover: productChangeoverData.length,
             todayProcess: processData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayMetal: metalDetectionData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayHygiene: dailyHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayGHP: ghpHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayChangeover: productChangeoverData.filter(d => new Date(d.timestamp).toDateString() === today).length,
-            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, productChangeoverData)
+            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData)
         };
     }
 
-    getRecentRecords(process, metal, hygiene, changeover) {
+    getRecentRecords(process, metal, hygiene, ghp, changeover) {
         const allRecords = [
             ...process.map(r => ({ ...r, type: 'Process Data', icon: 'clipboard-data', color: 'primary' })),
             ...metal.map(r => ({ ...r, type: 'Metal Detection', icon: 'shield-check', color: 'success' })),
             ...hygiene.map(r => ({ ...r, type: 'Daily Hygiene', icon: 'droplet-half', color: 'info' })),
-            ...changeover.map(r => ({ ...r, type: 'Product Changeover', icon: 'arrow-repeat', color: 'warning' }))
+            ...ghp.map(r => ({ ...r, type: 'GHP Hygiene', icon: 'clock-history', color: 'warning' })),
+            ...changeover.map(r => ({ ...r, type: 'Product Changeover', icon: 'arrow-repeat', color: 'secondary' }))
         ];
 
         return allRecords
@@ -43,10 +47,10 @@ class DashboardComponent extends BaseComponent {
 
     async render() {
         const todayTotal = this.state.todayProcess + this.state.todayMetal + 
-                          this.state.todayHygiene + this.state.todayChangeover;
+                          this.state.todayHygiene + this.state.todayGHP + this.state.todayChangeover;
         
         const totalRecords = this.state.totalProcess + this.state.totalMetal + 
-                           this.state.totalHygiene + this.state.totalChangeover;
+                           this.state.totalHygiene + this.state.totalGHP + this.state.totalChangeover;
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -61,7 +65,7 @@ class DashboardComponent extends BaseComponent {
 
                 <!-- Stats Cards -->
                 <div class="row g-3 mb-4">
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <div class="stat-card slide-up">
                             <div class="stat-icon primary">
                                 <i class="bi bi-clipboard-data"></i>
@@ -75,7 +79,7 @@ class DashboardComponent extends BaseComponent {
                         </div>
                     </div>
                     
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <div class="stat-card slide-up" style="animation-delay: 0.1s;">
                             <div class="stat-icon success">
                                 <i class="bi bi-shield-check"></i>
@@ -89,7 +93,7 @@ class DashboardComponent extends BaseComponent {
                         </div>
                     </div>
                     
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <div class="stat-card slide-up" style="animation-delay: 0.2s;">
                             <div class="stat-icon warning">
                                 <i class="bi bi-droplet-half"></i>
@@ -102,9 +106,23 @@ class DashboardComponent extends BaseComponent {
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-3 col-md-6">
+
+                    <div class="col-lg-2 col-md-4 col-6">
                         <div class="stat-card slide-up" style="animation-delay: 0.3s;">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalGHP)}</div>
+                            <div class="stat-label">GHP Hygiene</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayGHP} hôm nay
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.4s;">
                             <div class="stat-icon danger">
                                 <i class="bi bi-arrow-repeat"></i>
                             </div>
@@ -113,6 +131,20 @@ class DashboardComponent extends BaseComponent {
                             <div class="stat-change positive">
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayChangeover} hôm nay
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.5s;">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-bar-chart"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(totalRecords)}</div>
+                            <div class="stat-label">Tổng cộng</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${todayTotal} hôm nay
                             </div>
                         </div>
                     </div>
@@ -155,28 +187,40 @@ class DashboardComponent extends BaseComponent {
                             </div>
                             <div class="card-body">
                                 <div class="row g-2">
-                                    <div class="col-md-3 col-6">
+                                    <div class="col-lg-2 col-md-4 col-6">
                                         <button class="btn btn-modern btn-primary w-100" onclick="app.navigateTo('process-data')">
                                             <i class="bi bi-plus-circle"></i>
                                             Process Data mới
                                         </button>
                                     </div>
-                                    <div class="col-md-3 col-6">
+                                    <div class="col-lg-2 col-md-4 col-6">
                                         <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('metal-detection')">
                                             <i class="bi bi-shield-plus"></i>
                                             Metal Detection
                                         </button>
                                     </div>
-                                    <div class="col-md-3 col-6">
+                                    <div class="col-lg-2 col-md-4 col-6">
                                         <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('daily-hygiene')">
                                             <i class="bi bi-droplet"></i>
                                             Daily Hygiene
                                         </button>
                                     </div>
-                                    <div class="col-md-3 col-6">
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('ghp-hygiene')">
+                                            <i class="bi bi-clock-history"></i>
+                                            GHP Hygiene
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
                                         <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('product-changeover')">
                                             <i class="bi bi-arrow-left-right"></i>
                                             Changeover
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('data-view')">
+                                            <i class="bi bi-table"></i>
+                                            Xem dữ liệu
                                         </button>
                                     </div>
                                 </div>
@@ -228,6 +272,7 @@ class DashboardComponent extends BaseComponent {
         const processDataByDay = [];
         const metalDataByDay = [];
         const hygieneDataByDay = [];
+        const ghpDataByDay = [];
         const changeoverDataByDay = [];
 
         for (let i = 6; i >= 0; i--) {
@@ -240,11 +285,13 @@ class DashboardComponent extends BaseComponent {
             const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
             const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
             const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+            const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
             const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
             
             processDataByDay.push(processData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
             metalDataByDay.push(metalData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
             hygieneDataByDay.push(hygieneData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            ghpDataByDay.push(ghpData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
             changeoverDataByDay.push(changeoverData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
         }
 
@@ -275,10 +322,17 @@ class DashboardComponent extends BaseComponent {
                         borderWidth: 1
                     },
                     {
-                        label: 'Changeover',
-                        data: changeoverDataByDay,
+                        label: 'GHP Hygiene',
+                        data: ghpDataByDay,
                         backgroundColor: 'rgba(245, 158, 11, 0.5)',
                         borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Changeover',
+                        data: changeoverDataByDay,
+                        backgroundColor: 'rgba(107, 114, 128, 0.5)',
+                        borderColor: 'rgba(107, 114, 128, 1)',
                         borderWidth: 1
                     }
                 ]
