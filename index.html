@@ -11,14 +11,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link rel="stylesheet" href="css/modern-style.css">
 </head>
 <body>
+    <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-logo">
@@ -34,8 +32,11 @@
         </div>
     </div>
 
+    <!-- Login Container (will be shown first) -->
+    <div id="loginContainer" style="display: none;"></div>
+
+    <!-- Main App (will be shown after login) -->
     <div id="mainApp" style="display: none;">
-        
         <div class="modern-sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
@@ -48,8 +49,7 @@
                 <span class="badge bg-danger ms-auto">DEV</span>
             </div>
             
-            <nav class="sidebar-nav" id="sidebarNav">
-                </nav>
+            <nav class="sidebar-nav" id="sidebarNav"></nav>
             
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -63,7 +63,6 @@
         </div>
         
         <div class="main-wrapper" id="mainWrapper">
-            
             <div class="top-bar" id="topBar">
                 <button class="menu-toggle" id="menuToggle">
                     <i class="bi bi-list"></i>
@@ -92,34 +91,38 @@
                 </div>
             </div>
             
-            <div class="content-container" id="contentContainer">
-                </div>
+            <div class="content-container" id="contentContainer"></div>
         </div>
     </div>
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
-
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Data Files - LOAD FIRST -->
+    <script src="data/employees.js"></script>
+    
     <!-- Core JS Files -->
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sharepoint.js"></script>
+    <script src="js/master-data-manager.js"></script>
     
-    <!-- Component System - MUST LOAD FIRST -->
+    <!-- Component System - MUST LOAD AFTER DATA -->
     <script src="js/component-loader.js"></script>
     
     <!-- Components - Load after component system -->
+    <script src="js/login-component.js"></script>
     <script src="js/dashboard-component.js"></script>
     <script src="js/process-data-component.js"></script>
-    <script src="js/pho-technology-component.js"></script> <!-- NEW -->
+    <script src="js/pho-technology-component.js"></script>
     <script src="js/metal-detection-component.js"></script>
     <script src="js/daily-hygiene-component.js"></script>
     <script src="js/product-changeover-component.js"></script>
     <script src="js/ghp-hygiene-component.js"></script>
+    <script src="js/file-upload-component.js"></script>
     
     <!-- Main App - Load last -->
     <script src="js/modern-app.js"></script>
@@ -127,11 +130,10 @@
     <script>
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            // Check if all required components are available
             console.log('Initializing app...');
             console.log('BaseComponent available:', typeof BaseComponent !== 'undefined');
+            console.log('employeeManager available:', typeof employeeManager !== 'undefined');
             console.log('componentLoader available:', typeof componentLoader !== 'undefined');
-            console.log('Registered components:', componentLoader ? componentLoader.getRegisteredComponents() : 'N/A');
             
             // Initialize app
             window.app = new ModernApp();
