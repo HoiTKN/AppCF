@@ -1,14 +1,24 @@
-// Process Data Form Component - Updated (keeping original layout)
+// Process Data Form Component - Updated with Employee Integration
 class ProcessDataComponent extends BaseComponent {
     async initialize() {
         this.formData = {};
         this.parameters = [];
+        this.currentUser = employeeManager.getCurrentUser();
         await this.loadParameters();
     }
 
     async loadParameters() {
         // Load từ SharePoint hoặc mock data
         this.parameters = sharepointManager.parameters || [];
+        
+        // Filter parameters by user's site if not manager
+        if (this.currentUser && !employeeManager.isManager()) {
+            this.parameters = this.parameters.filter(param => {
+                const fields = param.fields || param;
+                const code = fields['M_x00e3__x0020__x0110_KSX'] || fields['MaDKSX'];
+                return code && code.includes(this.currentUser.site);
+            });
+        }
     }
 
     async render() {
@@ -23,7 +33,7 @@ class ProcessDataComponent extends BaseComponent {
                         <i class="bi bi-clipboard-data me-2"></i>
                         Data công nghệ mì
                     </h2>
-                    <p class="text-muted">Nhập thông tin kiểm tra quá trình sản xuất mì</p>
+                    <p class="text-muted">Nhập thông tin kiểm tra quá trình sản xuất mì - Site: ${this.currentUser?.site || 'N/A'}</p>
                 </div>
 
                 <!-- Form Card -->
@@ -42,13 +52,11 @@ class ProcessDataComponent extends BaseComponent {
                                         <label class="form-label">
                                             Site <span class="text-danger">*</span>
                                         </label>
-                                        <select class="modern-input modern-select" id="site" required>
+                                        <select class="modern-input modern-select" id="site" required ${!employeeManager.isManager() ? 'disabled' : ''}>
                                             <option value="">Chọn site...</option>
-                                            <option value="MMB">MMB</option>
-                                            <option value="MSI">MSI</option>
-                                            <option value="MHD">MHD</option>
-                                            <option value="MHG">MHG</option>
+                                            ${this.renderSiteOptions()}
                                         </select>
+                                        ${!employeeManager.isManager() ? '<div class="form-helper">Site được tự động chọn theo tài khoản</div>' : ''}
                                     </div>
                                     
                                     <div class="col-md-4">
@@ -56,7 +64,10 @@ class ProcessDataComponent extends BaseComponent {
                                             Mã nhân viên QA <span class="text-danger">*</span>
                                         </label>
                                         <input type="text" class="modern-input" id="maNhanVien" 
+                                               value="${this.currentUser?.id || ''}" 
+                                               ${!employeeManager.isManager() ? 'readonly' : ''} 
                                                placeholder="VD: QA001" required>
+                                        ${!employeeManager.isManager() ? '<div class="form-helper">Tự động điền theo tài khoản đăng nhập</div>' : ''}
                                     </div>
                                     
                                     <div class="col-md-4">
@@ -77,7 +88,7 @@ class ProcessDataComponent extends BaseComponent {
                                         </label>
                                         <select class="modern-input modern-select" id="lineSX" required>
                                             <option value="">Chọn line...</option>
-                                            ${[1,2,3,4,5,6,7,8].map(i => `<option value="L${i}">Line ${i}</option>`).join('')}
+                                            ${this.renderLineOptions()}
                                         </select>
                                     </div>
                                     
@@ -172,7 +183,6 @@ class ProcessDataComponent extends BaseComponent {
                                         </div>
                                     </div>
                                     
-                                    <!-- NEW: Ngoại quan sợi -->
                                     <div class="col-md-6">
                                         <label class="form-label">Ngoại quan sợi</label>
                                         <select class="modern-input modern-select" id="ngoaiQuanSoi">
@@ -182,7 +192,6 @@ class ProcessDataComponent extends BaseComponent {
                                         </select>
                                     </div>
                                     
-                                    <!-- NEW: Mô tả sợi (hiện khi không đạt) -->
                                     <div class="col-md-6" id="moTaSoiContainer" style="display: none;">
                                         <label class="form-label">Mô tả (nếu không đạt)</label>
                                         <textarea class="modern-input" id="moTaSoi" rows="2" 
@@ -192,7 +201,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- NEW: ĐKSX, áp suất hơi van thành phần -->
+                        <!-- ĐKSX, áp suất hơi van thành phần -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -227,7 +236,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- NEW: Ngoại quan phôi mì -->
+                        <!-- Ngoại quan phôi mì -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -248,7 +257,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- NEW: Van châm BHA/BHT -->
+                        <!-- Van châm BHA/BHT -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -280,7 +289,6 @@ class ProcessDataComponent extends BaseComponent {
                                 <div class="row g-3">
                                     ${this.renderSensoryInputs()}
                                     
-                                    <!-- NEW: Mô tả cảm quan -->
                                     <div class="col-12">
                                         <label class="form-label">Mô tả cảm quan (nếu có)</label>
                                         <textarea class="modern-input" id="moTaCamQuan" rows="3" 
@@ -309,6 +317,38 @@ class ProcessDataComponent extends BaseComponent {
         `;
 
         this.attachEventListeners();
+        this.autoFillUserData();
+    }
+
+    renderSiteOptions() {
+        if (employeeManager.isManager()) {
+            // Managers can see all sites
+            return `
+                <option value="MMB">MMB</option>
+                <option value="MSI">MSI</option>
+                <option value="MHD">MHD</option>
+                <option value="MHG">MHG</option>
+            `;
+        } else if (this.currentUser) {
+            // Regular users only see their site
+            return `<option value="${this.currentUser.site}" selected>${this.currentUser.site}</option>`;
+        }
+        return '<option value="">Không có quyền</option>';
+    }
+
+    renderLineOptions() {
+        if (!this.currentUser) {
+            return '<option value="">Đăng nhập để xem</option>';
+        }
+
+        const siteConfig = SITE_CONFIGS[this.currentUser.site];
+        if (!siteConfig) {
+            return '<option value="">Site không hỗ trợ</option>';
+        }
+
+        return siteConfig.lines.map(line => 
+            `<option value="${line}">${line}</option>`
+        ).join('');
     }
 
     renderProductOptions() {
@@ -372,6 +412,25 @@ class ProcessDataComponent extends BaseComponent {
                 </select>
             </div>
         `).join('');
+    }
+
+    autoFillUserData() {
+        if (!this.currentUser) return;
+
+        // Auto-fill site for non-managers
+        if (!employeeManager.isManager()) {
+            const siteSelect = this.$('#site');
+            if (siteSelect) {
+                siteSelect.value = this.currentUser.site;
+                siteSelect.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // Auto-fill employee ID
+        const maNhanVienInput = this.$('#maNhanVien');
+        if (maNhanVienInput && !maNhanVienInput.value) {
+            maNhanVienInput.value = this.currentUser.id;
+        }
     }
 
     attachEventListeners() {
@@ -445,14 +504,39 @@ class ProcessDataComponent extends BaseComponent {
     filterProducts() {
         // Filter products based on selected site
         const site = this.$('#site').value;
-        // Implementation for filtering...
+        if (!site) return;
+
+        // Reload parameters for the selected site
+        this.parameters = sharepointManager.parameters.filter(param => {
+            const fields = param.fields || param;
+            const code = fields['M_x00e3__x0020__x0110_KSX'] || fields['MaDKSX'];
+            return code && code.includes(site);
+        });
+
+        // Update product dropdown
+        const maDKSXSelect = this.$('#maDKSX');
+        if (maDKSXSelect) {
+            maDKSXSelect.innerHTML = '<option value="">Chọn mã ĐKSX...</option>' + this.renderProductOptions();
+        }
     }
 
     async handleSubmit(e) {
         e.preventDefault();
         
+        // Check permissions
+        if (!employeeManager.hasPermission('write')) {
+            this.showToast('Lỗi', 'Bạn không có quyền nhập dữ liệu', 'error');
+            return;
+        }
+
         // Collect form data
         const formData = this.collectFormData();
+        
+        // Add user context
+        formData.submittedBy = this.currentUser?.id;
+        formData.submittedByName = this.currentUser?.name;
+        formData.userSite = this.currentUser?.site;
+        formData.userGroup = this.currentUser?.group;
         
         // Save to localStorage/SharePoint
         await sharepointManager.createItem(formData);
@@ -463,23 +547,23 @@ class ProcessDataComponent extends BaseComponent {
 
     collectFormData() {
         const fields = [
-            'site', 'maNhanVien', 'nsx', 'gioKiemTra', 'lineSX', 'maDKSX', // UPDATED: added nsx, gioKiemTra
+            'site', 'maNhanVien', 'nsx', 'gioKiemTra', 'lineSX', 'maDKSX',
             'brixKansui', 'nhietDoKansui', 'ngoaiQuanKansui',
             'brixSeasoning', 'ngoaiQuanSeasoning', 'doDayLaBot',
-            'ngoaiQuanSoi', 'moTaSoi',  // NEW
-            'apSuatHoiVan',  // NEW
+            'ngoaiQuanSoi', 'moTaSoi',
+            'apSuatHoiVan',
             'nhietDauTrai', 'nhietDauPhai', 'nhietGiua1Trai', 'nhietGiua1Phai',
             'nhietGiua2Trai', 'nhietGiua2Phai', 'nhietGiua3Trai', 'nhietGiua3Phai',
             'nhietCuoiTrai', 'nhietCuoiPhai',
-            'ngoaiQuanPhoiMi',  // NEW
-            'vanChamBHA',  // NEW
+            'ngoaiQuanPhoiMi',
+            'vanChamBHA',
             'camQuanCoTinh', 'camQuanMau', 'camQuanMui', 'camQuanVi',
-            'moTaCamQuan'  // NEW
+            'moTaCamQuan'
         ];
 
         const data = {
             timestamp: new Date().toISOString(),
-            formType: 'process-data', // ADDED
+            formType: 'process-data',
             sanPham: this.$('#productName').textContent
         };
 
@@ -512,6 +596,9 @@ class ProcessDataComponent extends BaseComponent {
             // Reset date and time to current
             this.$('#nsx').value = new Date().toISOString().split('T')[0];
             this.$('#gioKiemTra').value = new Date().toTimeString().slice(0, 8);
+            
+            // Re-apply user data
+            this.autoFillUserData();
         }
     }
 }
