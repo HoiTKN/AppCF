@@ -1,4 +1,4 @@
-// Dashboard Component
+// Dashboard Component - Updated
 class DashboardComponent extends BaseComponent {
     async initialize() {
         // Load data from localStorage
@@ -27,7 +27,8 @@ class DashboardComponent extends BaseComponent {
             todayHygiene: dailyHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayGHP: ghpHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayChangeover: productChangeoverData.filter(d => new Date(d.timestamp).toDateString() === today).length,
-            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData)
+            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData),
+            qualityStats: this.calculateQualityStats(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData)
         };
     }
 
@@ -42,7 +43,78 @@ class DashboardComponent extends BaseComponent {
 
         return allRecords
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-            .slice(0, 10);
+            .slice(0, 15);
+    }
+
+    calculateQualityStats(process, metal, hygiene, ghp, changeover) {
+        // Calculate quality metrics
+        const processPass = process.filter(r => 
+            r.ngoaiQuanKansui === 'Đạt' && 
+            r.ngoaiQuanSeasoning === 'Đạt' &&
+            r.ngoaiQuanSoi === 'Đạt' &&
+            r.ngoaiQuanPhoiMi === 'Đạt' &&
+            r.vanChamBHA === 'Đạt'
+        ).length;
+
+        const metalPass = metal.filter(r => r.ketLuanTest === 'Đạt').length;
+        const hygienePass = hygiene.filter(r => r.conclusion === 'Đạt').length;
+        const ghpPass = ghp.filter(r => r.conclusion === 'Đạt').length;
+        const changeoverComplete = changeover.filter(r => {
+            const items = r.checklistItems || {};
+            return Object.keys(items).length === 6; // All 6 checklist items completed
+        }).length;
+
+        return {
+            processPassRate: process.length > 0 ? ((processPass / process.length) * 100).toFixed(1) : 0,
+            metalPassRate: metal.length > 0 ? ((metalPass / metal.length) * 100).toFixed(1) : 0,
+            hygienePassRate: hygiene.length > 0 ? ((hygienePass / hygiene.length) * 100).toFixed(1) : 0,
+            ghpPassRate: ghp.length > 0 ? ((ghpPass / ghp.length) * 100).toFixed(1) : 0,
+            changeoverCompletionRate: changeover.length > 0 ? ((changeoverComplete / changeover.length) * 100).toFixed(1) : 0,
+            averageTemperature: this.calculateAverageTemperature(process),
+            metalDetectionEfficiency: this.calculateMetalDetectionEfficiency(metal)
+        };
+    }
+
+    calculateAverageTemperature(processData) {
+        if (processData.length === 0) return 0;
+        
+        const tempFields = [
+            'nhietDauTrai', 'nhietDauPhai', 'nhietGiua1Trai', 'nhietGiua1Phai',
+            'nhietGiua2Trai', 'nhietGiua2Phai', 'nhietGiua3Trai', 'nhietGiua3Phai',
+            'nhietCuoiTrai', 'nhietCuoiPhai'
+        ];
+        
+        let totalTemp = 0;
+        let count = 0;
+        
+        processData.forEach(record => {
+            tempFields.forEach(field => {
+                if (record[field] && !isNaN(record[field])) {
+                    totalTemp += parseFloat(record[field]);
+                    count++;
+                }
+            });
+        });
+        
+        return count > 0 ? (totalTemp / count).toFixed(1) : 0;
+    }
+
+    calculateMetalDetectionEfficiency(metalData) {
+        if (metalData.length === 0) return 0;
+        
+        let totalDetected = 0;
+        let totalSamples = 0;
+        
+        metalData.forEach(record => {
+            ['feSamples', 'inoxSamples', 'metalSamples', 'wireSamples'].forEach(field => {
+                if (record[field] && !isNaN(record[field])) {
+                    totalSamples += parseInt(record[field]);
+                    totalDetected += parseInt(record[field]); // Assuming all samples were correctly detected
+                }
+            });
+        });
+        
+        return totalSamples > 0 ? ((totalDetected / totalSamples) * 100).toFixed(1) : 0;
     }
 
     async render() {
@@ -60,7 +132,7 @@ class DashboardComponent extends BaseComponent {
                         <i class="bi bi-speedometer2 me-2"></i>
                         Dashboard
                     </h2>
-                    <p class="text-muted">Tổng quan hệ thống quản lý chất lượng</p>
+                    <p class="text-muted">Tổng quan hệ thống quản lý chất lượng - Phiên bản ${APP_CONFIG.app.version}</p>
                 </div>
 
                 <!-- Stats Cards -->
@@ -76,6 +148,9 @@ class DashboardComponent extends BaseComponent {
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayProcess} hôm nay
                             </div>
+                            <div class="small text-muted mt-1">
+                                Pass rate: ${this.state.qualityStats.processPassRate}%
+                            </div>
                         </div>
                     </div>
                     
@@ -89,6 +164,9 @@ class DashboardComponent extends BaseComponent {
                             <div class="stat-change positive">
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayMetal} hôm nay
+                            </div>
+                            <div class="small text-muted mt-1">
+                                Pass rate: ${this.state.qualityStats.metalPassRate}%
                             </div>
                         </div>
                     </div>
@@ -104,6 +182,9 @@ class DashboardComponent extends BaseComponent {
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayHygiene} hôm nay
                             </div>
+                            <div class="small text-muted mt-1">
+                                Pass rate: ${this.state.qualityStats.hygienePassRate}%
+                            </div>
                         </div>
                     </div>
 
@@ -117,6 +198,9 @@ class DashboardComponent extends BaseComponent {
                             <div class="stat-change positive">
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayGHP} hôm nay
+                            </div>
+                            <div class="small text-muted mt-1">
+                                Pass rate: ${this.state.qualityStats.ghpPassRate}%
                             </div>
                         </div>
                     </div>
@@ -132,6 +216,9 @@ class DashboardComponent extends BaseComponent {
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayChangeover} hôm nay
                             </div>
+                            <div class="small text-muted mt-1">
+                                Completion: ${this.state.qualityStats.changeoverCompletionRate}%
+                            </div>
                         </div>
                     </div>
 
@@ -146,6 +233,93 @@ class DashboardComponent extends BaseComponent {
                                 <i class="bi bi-arrow-up"></i>
                                 +${todayTotal} hôm nay
                             </div>
+                            <div class="small text-muted mt-1">
+                                Avg temp: ${this.state.qualityStats.averageTemperature}°C
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Metrics -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="modern-card">
+                            <div class="card-header">
+                                <h5 class="card-title">
+                                    <i class="bi bi-graph-up me-2"></i>
+                                    Chỉ số chất lượng
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                                                    <i class="bi bi-clipboard-check text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fw-semibold">${this.state.qualityStats.processPassRate}%</div>
+                                                <div class="small text-muted">Process Pass Rate</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                                                    <i class="bi bi-shield-check text-success"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fw-semibold">${this.state.qualityStats.metalDetectionEfficiency}%</div>
+                                                <div class="small text-muted">Metal Detection</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="rounded-circle bg-info bg-opacity-10 p-2">
+                                                    <i class="bi bi-droplet text-info"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fw-semibold">${this.state.qualityStats.hygienePassRate}%</div>
+                                                <div class="small text-muted">Hygiene Score</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+                                                    <i class="bi bi-thermometer text-warning"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fw-semibold">${this.state.qualityStats.averageTemperature}°C</div>
+                                                <div class="small text-muted">Avg Temperature</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="modern-card">
+                            <div class="card-header">
+                                <h5 class="card-title">
+                                    <i class="bi bi-pie-chart me-2"></i>
+                                    Phân bố dữ liệu
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="dataDistributionChart" height="200"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,7 +329,10 @@ class DashboardComponent extends BaseComponent {
                     <div class="col-lg-8">
                         <div class="modern-card">
                             <div class="card-header">
-                                <h5 class="card-title">Biểu đồ hoạt động 7 ngày gần nhất</h5>
+                                <h5 class="card-title">
+                                    <i class="bi bi-graph-up me-2"></i>
+                                    Biểu đồ hoạt động 7 ngày gần nhất
+                                </h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="activityChart" height="100"></canvas>
@@ -167,10 +344,13 @@ class DashboardComponent extends BaseComponent {
                     <div class="col-lg-4">
                         <div class="modern-card">
                             <div class="card-header">
-                                <h5 class="card-title">Hoạt động gần đây</h5>
+                                <h5 class="card-title">
+                                    <i class="bi bi-clock me-2"></i>
+                                    Hoạt động gần đây
+                                </h5>
                             </div>
                             <div class="card-body">
-                                <div class="recent-records">
+                                <div class="recent-records" style="max-height: 400px; overflow-y: auto;">
                                     ${this.renderRecentRecords()}
                                 </div>
                             </div>
@@ -183,7 +363,10 @@ class DashboardComponent extends BaseComponent {
                     <div class="col-12">
                         <div class="modern-card">
                             <div class="card-header">
-                                <h5 class="card-title">Thao tác nhanh</h5>
+                                <h5 class="card-title">
+                                    <i class="bi bi-lightning me-2"></i>
+                                    Thao tác nhanh
+                                </h5>
                             </div>
                             <div class="card-body">
                                 <div class="row g-2">
@@ -231,8 +414,11 @@ class DashboardComponent extends BaseComponent {
             </div>
         `;
 
-        // Render chart after DOM is ready
-        setTimeout(() => this.renderChart(), 100);
+        // Render charts after DOM is ready
+        setTimeout(() => {
+            this.renderActivityChart();
+            this.renderDataDistributionChart();
+        }, 100);
     }
 
     renderRecentRecords() {
@@ -255,6 +441,11 @@ class DashboardComponent extends BaseComponent {
                     <div class="text-muted small">
                         ${this.formatTime(record.timestamp)}
                     </div>
+                    ${record.conclusion ? `
+                        <span class="badge ${record.conclusion === 'Đạt' ? 'bg-success' : 'bg-danger'} badge-sm">
+                            ${record.conclusion}
+                        </span>
+                    ` : ''}
                 </div>
                 <button class="btn btn-sm btn-outline-secondary" onclick="app.viewRecord('${record.id}', '${record.type}')">
                     <i class="bi bi-eye"></i>
@@ -263,7 +454,7 @@ class DashboardComponent extends BaseComponent {
         `).join('');
     }
 
-    renderChart() {
+    renderActivityChart() {
         const canvas = document.getElementById('activityChart');
         if (!canvas) return;
 
@@ -362,6 +553,50 @@ class DashboardComponent extends BaseComponent {
                         }
                     }
                 }
+            }
+        });
+    }
+
+    renderDataDistributionChart() {
+        const canvas = document.getElementById('dataDistributionChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Process Data', 'Metal Detection', 'Daily Hygiene', 'GHP Hygiene', 'Changeover'],
+                datasets: [{
+                    data: [
+                        this.state.totalProcess,
+                        this.state.totalMetal,
+                        this.state.totalHygiene,
+                        this.state.totalGHP,
+                        this.state.totalChangeover
+                    ],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(107, 114, 128, 0.8)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                },
+                cutout: '60%'
             }
         });
     }
