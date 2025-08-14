@@ -1,4 +1,4 @@
-// Metal Detection Component - Updated
+// Metal Detection Component - Updated (keeping original layout)
 class MetalDetectionComponent extends BaseComponent {
     async initialize() {
         this.state = {
@@ -492,7 +492,7 @@ class MetalDetectionComponent extends BaseComponent {
             });
         }
 
-        // Allow direct input for nguoi nhiem tu
+        // Allow direct input for nguoi nhiem tu (FIXED)
         if (numberInput) {
             this.addEventListener(numberInput, 'input', () => {
                 let value = parseFloat(numberInput.value) || 0;
