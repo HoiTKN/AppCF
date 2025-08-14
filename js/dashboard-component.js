@@ -6,8 +6,9 @@ class DashboardComponent extends BaseComponent {
     }
 
     loadData() {
-        // Get data from all forms
+        // Get data from all forms - UPDATED to include pho data
         const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+        const phoTechnologyData = JSON.parse(localStorage.getItem('qaPhoTechnologyData') || '[]'); // NEW
         const metalDetectionData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
         const dailyHygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
         const ghpHygieneData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
@@ -18,23 +19,26 @@ class DashboardComponent extends BaseComponent {
         
         this.state = {
             totalProcess: processData.length,
+            totalPho: phoTechnologyData.length, // NEW
             totalMetal: metalDetectionData.length,
             totalHygiene: dailyHygieneData.length,
             totalGHP: ghpHygieneData.length,
             totalChangeover: productChangeoverData.length,
             todayProcess: processData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayPho: phoTechnologyData.filter(d => new Date(d.timestamp).toDateString() === today).length, // NEW
             todayMetal: metalDetectionData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayHygiene: dailyHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayGHP: ghpHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
             todayChangeover: productChangeoverData.filter(d => new Date(d.timestamp).toDateString() === today).length,
-            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData),
-            qualityStats: this.calculateQualityStats(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData)
+            recentRecords: this.getRecentRecords(processData, phoTechnologyData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData), // UPDATED
+            qualityStats: this.calculateQualityStats(processData, phoTechnologyData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData) // UPDATED
         };
     }
 
-    getRecentRecords(process, metal, hygiene, ghp, changeover) {
+    getRecentRecords(process, pho, metal, hygiene, ghp, changeover) { // UPDATED
         const allRecords = [
-            ...process.map(r => ({ ...r, type: 'Process Data', icon: 'clipboard-data', color: 'primary' })),
+            ...process.map(r => ({ ...r, type: 'Data công nghệ mì', icon: 'clipboard-data', color: 'primary' })), // UPDATED
+            ...pho.map(r => ({ ...r, type: 'Data công nghệ phở', icon: 'clipboard-data-fill', color: 'info' })), // NEW
             ...metal.map(r => ({ ...r, type: 'Metal Detection', icon: 'shield-check', color: 'success' })),
             ...hygiene.map(r => ({ ...r, type: 'Daily Hygiene', icon: 'droplet-half', color: 'info' })),
             ...ghp.map(r => ({ ...r, type: 'GHP Hygiene', icon: 'clock-history', color: 'warning' })),
@@ -46,7 +50,7 @@ class DashboardComponent extends BaseComponent {
             .slice(0, 15);
     }
 
-    calculateQualityStats(process, metal, hygiene, ghp, changeover) {
+    calculateQualityStats(process, pho, metal, hygiene, ghp, changeover) { // UPDATED
         // Calculate quality metrics
         const processPass = process.filter(r => 
             r.ngoaiQuanKansui === 'Đạt' && 
@@ -54,6 +58,13 @@ class DashboardComponent extends BaseComponent {
             r.ngoaiQuanSoi === 'Đạt' &&
             r.ngoaiQuanPhoiMi === 'Đạt' &&
             r.vanChamBHA === 'Đạt'
+        ).length;
+
+        // NEW: Pho quality calculation
+        const phoPass = pho.filter(r => 
+            r.ngoaiQuanKansui === 'Đạt' && 
+            r.ngoaiQuanTamPhoSauHap === 'Đạt' &&
+            r.ngoaiQuanVatSauSay === 'Đạt'
         ).length;
 
         const metalPass = metal.filter(r => r.ketLuanTest === 'Đạt').length;
@@ -66,6 +77,7 @@ class DashboardComponent extends BaseComponent {
 
         return {
             processPassRate: process.length > 0 ? ((processPass / process.length) * 100).toFixed(1) : 0,
+            phoPassRate: pho.length > 0 ? ((phoPass / pho.length) * 100).toFixed(1) : 0, // NEW
             metalPassRate: metal.length > 0 ? ((metalPass / metal.length) * 100).toFixed(1) : 0,
             hygienePassRate: hygiene.length > 0 ? ((hygienePass / hygiene.length) * 100).toFixed(1) : 0,
             ghpPassRate: ghp.length > 0 ? ((ghpPass / ghp.length) * 100).toFixed(1) : 0,
@@ -118,11 +130,11 @@ class DashboardComponent extends BaseComponent {
     }
 
     async render() {
-        const todayTotal = this.state.todayProcess + this.state.todayMetal + 
-                          this.state.todayHygiene + this.state.todayGHP + this.state.todayChangeover;
+        const todayTotal = this.state.todayProcess + this.state.todayPho + this.state.todayMetal + 
+                          this.state.todayHygiene + this.state.todayGHP + this.state.todayChangeover; // UPDATED
         
-        const totalRecords = this.state.totalProcess + this.state.totalMetal + 
-                           this.state.totalHygiene + this.state.totalGHP + this.state.totalChangeover;
+        const totalRecords = this.state.totalProcess + this.state.totalPho + this.state.totalMetal + 
+                           this.state.totalHygiene + this.state.totalGHP + this.state.totalChangeover; // UPDATED
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -143,13 +155,30 @@ class DashboardComponent extends BaseComponent {
                                 <i class="bi bi-clipboard-data"></i>
                             </div>
                             <div class="stat-value">${this.formatNumber(this.state.totalProcess)}</div>
-                            <div class="stat-label">Process Data</div>
+                            <div class="stat-label">Data công nghệ mì</div>
                             <div class="stat-change positive">
                                 <i class="bi bi-arrow-up"></i>
                                 +${this.state.todayProcess} hôm nay
                             </div>
                             <div class="small text-muted mt-1">
                                 Pass rate: ${this.state.qualityStats.processPassRate}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.05s;">
+                            <div class="stat-icon info">
+                                <i class="bi bi-clipboard-data-fill"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalPho)}</div>
+                            <div class="stat-label">Data công nghệ phở</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayPho} hôm nay
+                            </div>
+                            <div class="small text-muted mt-1">
+                                Pass rate: ${this.state.qualityStats.phoPassRate}%
                             </div>
                         </div>
                     </div>
@@ -221,23 +250,6 @@ class DashboardComponent extends BaseComponent {
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <div class="stat-card slide-up" style="animation-delay: 0.5s;">
-                            <div class="stat-icon primary">
-                                <i class="bi bi-bar-chart"></i>
-                            </div>
-                            <div class="stat-value">${this.formatNumber(totalRecords)}</div>
-                            <div class="stat-label">Tổng cộng</div>
-                            <div class="stat-change positive">
-                                <i class="bi bi-arrow-up"></i>
-                                +${todayTotal} hôm nay
-                            </div>
-                            <div class="small text-muted mt-1">
-                                Avg temp: ${this.state.qualityStats.averageTemperature}°C
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Quality Metrics -->
@@ -268,6 +280,19 @@ class DashboardComponent extends BaseComponent {
                                     <div class="col-6">
                                         <div class="d-flex align-items-center">
                                             <div class="flex-shrink-0">
+                                                <div class="rounded-circle bg-info bg-opacity-10 p-2">
+                                                    <i class="bi bi-clipboard-data text-info"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fw-semibold">${this.state.qualityStats.phoPassRate}%</div>
+                                                <div class="small text-muted">Pho Pass Rate</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
                                                 <div class="rounded-circle bg-success bg-opacity-10 p-2">
                                                     <i class="bi bi-shield-check text-success"></i>
                                                 </div>
@@ -275,19 +300,6 @@ class DashboardComponent extends BaseComponent {
                                             <div class="flex-grow-1 ms-3">
                                                 <div class="fw-semibold">${this.state.qualityStats.metalDetectionEfficiency}%</div>
                                                 <div class="small text-muted">Metal Detection</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0">
-                                                <div class="rounded-circle bg-info bg-opacity-10 p-2">
-                                                    <i class="bi bi-droplet text-info"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <div class="fw-semibold">${this.state.qualityStats.hygienePassRate}%</div>
-                                                <div class="small text-muted">Hygiene Score</div>
                                             </div>
                                         </div>
                                     </div>
@@ -373,7 +385,13 @@ class DashboardComponent extends BaseComponent {
                                     <div class="col-lg-2 col-md-4 col-6">
                                         <button class="btn btn-modern btn-primary w-100" onclick="app.navigateTo('process-data')">
                                             <i class="bi bi-plus-circle"></i>
-                                            Process Data mới
+                                            Data công nghệ mì
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('pho-technology')">
+                                            <i class="bi bi-clipboard-data-fill"></i>
+                                            Data công nghệ phở
                                         </button>
                                     </div>
                                     <div class="col-lg-2 col-md-4 col-6">
@@ -398,12 +416,6 @@ class DashboardComponent extends BaseComponent {
                                         <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('product-changeover')">
                                             <i class="bi bi-arrow-left-right"></i>
                                             Changeover
-                                        </button>
-                                    </div>
-                                    <div class="col-lg-2 col-md-4 col-6">
-                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('data-view')">
-                                            <i class="bi bi-table"></i>
-                                            Xem dữ liệu
                                         </button>
                                     </div>
                                 </div>
@@ -467,6 +479,7 @@ class DashboardComponent extends BaseComponent {
         // Prepare data for last 7 days
         const last7Days = [];
         const processDataByDay = [];
+        const phoDataByDay = []; // NEW
         const metalDataByDay = [];
         const hygieneDataByDay = [];
         const ghpDataByDay = [];
@@ -480,12 +493,14 @@ class DashboardComponent extends BaseComponent {
             last7Days.push(date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit' }));
             
             const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+            const phoData = JSON.parse(localStorage.getItem('qaPhoTechnologyData') || '[]'); // NEW
             const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
             const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
             const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
             const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
             
             processDataByDay.push(processData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            phoDataByDay.push(phoData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length); // NEW
             metalDataByDay.push(metalData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
             hygieneDataByDay.push(hygieneData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
             ghpDataByDay.push(ghpData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
@@ -498,10 +513,17 @@ class DashboardComponent extends BaseComponent {
                 labels: last7Days,
                 datasets: [
                     {
-                        label: 'Process Data',
+                        label: 'Data công nghệ mì', // UPDATED
                         data: processDataByDay,
                         backgroundColor: 'rgba(99, 102, 241, 0.5)',
                         borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Data công nghệ phở', // NEW
+                        data: phoDataByDay,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
                         borderWidth: 1
                     },
                     {
@@ -514,15 +536,15 @@ class DashboardComponent extends BaseComponent {
                     {
                         label: 'Daily Hygiene',
                         data: hygieneDataByDay,
-                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.5)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
                         borderWidth: 1
                     },
                     {
                         label: 'GHP Hygiene',
                         data: ghpDataByDay,
-                        backgroundColor: 'rgba(245, 158, 11, 0.5)',
-                        borderColor: 'rgba(245, 158, 11, 1)',
+                        backgroundColor: 'rgba(251, 191, 36, 0.5)',
+                        borderColor: 'rgba(251, 191, 36, 1)',
                         borderWidth: 1
                     },
                     {
@@ -564,10 +586,11 @@ class DashboardComponent extends BaseComponent {
         new Chart(canvas, {
             type: 'doughnut',
             data: {
-                labels: ['Process Data', 'Metal Detection', 'Daily Hygiene', 'GHP Hygiene', 'Changeover'],
+                labels: ['Data công nghệ mì', 'Data công nghệ phở', 'Metal Detection', 'Daily Hygiene', 'GHP Hygiene', 'Changeover'], // UPDATED
                 datasets: [{
                     data: [
                         this.state.totalProcess,
+                        this.state.totalPho, // NEW
                         this.state.totalMetal,
                         this.state.totalHygiene,
                         this.state.totalGHP,
@@ -575,9 +598,10 @@ class DashboardComponent extends BaseComponent {
                     ],
                     backgroundColor: [
                         'rgba(99, 102, 241, 0.8)',
+                        'rgba(59, 130, 246, 0.8)', // NEW
                         'rgba(16, 185, 129, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
                         'rgba(245, 158, 11, 0.8)',
+                        'rgba(251, 191, 36, 0.8)',
                         'rgba(107, 114, 128, 0.8)'
                     ],
                     borderWidth: 2,
