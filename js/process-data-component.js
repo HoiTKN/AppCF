@@ -1,4 +1,4 @@
-// Process Data Form Component
+// Process Data Form Component - Updated
 class ProcessDataComponent extends BaseComponent {
     async initialize() {
         this.formData = {};
@@ -160,6 +160,54 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
+                        <!-- Ngoại quan sợi (NEW) -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-activity me-2"></i>
+                                    Ngoại quan sợi
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ngoại quan sợi</label>
+                                        <select class="modern-input modern-select" id="ngoaiQuanSoi">
+                                            <option value="">Chọn...</option>
+                                            <option value="Đạt">✅ Đạt</option>
+                                            <option value="Không đạt">❌ Không đạt</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6" id="moTaSoiContainer" style="display: none;">
+                                        <label class="form-label">Mô tả (nếu không đạt)</label>
+                                        <textarea class="modern-input" id="moTaSoi" rows="2" 
+                                                  placeholder="Mô tả chi tiết nếu không đạt..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ĐKSX, áp suất hơi van thành phần (NEW) -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-speedometer me-2"></i>
+                                    ĐKSX, áp suất hơi van thành phần
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Áp suất hơi van thành phần</label>
+                                        <select class="modern-input modern-select" id="apSuatHoiVan">
+                                            <option value="">Chọn...</option>
+                                            <option value="Đạt">✅ Đạt</option>
+                                            <option value="Không đạt">❌ Không đạt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Temperature Grid -->
                         <div class="card-body border-top">
                             <div class="form-section">
@@ -174,7 +222,49 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- Sensory Evaluation -->
+                        <!-- Ngoại quan phôi mì (NEW) -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-box me-2"></i>
+                                    Ngoại quan phôi mì
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ngoại quan phôi mì</label>
+                                        <select class="modern-input modern-select" id="ngoaiQuanPhoiMi">
+                                            <option value="">Chọn...</option>
+                                            <option value="Đạt">✅ Đạt</option>
+                                            <option value="Không đạt">❌ Không đạt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Van châm BHA/BHT (NEW) -->
+                        <div class="card-body border-top">
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="bi bi-valve me-2"></i>
+                                    Van châm BHA/BHT
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Van châm BHA/BHT</label>
+                                        <select class="modern-input modern-select" id="vanChamBHA">
+                                            <option value="">Chọn...</option>
+                                            <option value="Đạt">✅ Đạt</option>
+                                            <option value="Không đạt">❌ Không đạt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sensory Evaluation (UPDATED) -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -184,6 +274,13 @@ class ProcessDataComponent extends BaseComponent {
                                 
                                 <div class="row g-3">
                                     ${this.renderSensoryInputs()}
+                                    
+                                    <!-- Mô tả cảm quan (NEW) -->
+                                    <div class="col-12">
+                                        <label class="form-label">Mô tả cảm quan (nếu có)</label>
+                                        <textarea class="modern-input" id="moTaCamQuan" rows="3" 
+                                                  placeholder="Mô tả chi tiết về cảm quan nếu có ghi chú đặc biệt..."></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -296,6 +393,17 @@ class ProcessDataComponent extends BaseComponent {
         if (site) {
             this.addEventListener(site, 'change', () => this.filterProducts());
         }
+
+        // Ngoại quan sợi change listener
+        const ngoaiQuanSoi = this.$('#ngoaiQuanSoi');
+        if (ngoaiQuanSoi) {
+            this.addEventListener(ngoaiQuanSoi, 'change', () => {
+                const moTaContainer = this.$('#moTaSoiContainer');
+                if (moTaContainer) {
+                    moTaContainer.style.display = ngoaiQuanSoi.value === 'Không đạt' ? 'block' : 'none';
+                }
+            });
+        }
     }
 
     loadProductParameters() {
@@ -353,10 +461,15 @@ class ProcessDataComponent extends BaseComponent {
             'site', 'maNhanVien', 'lineSX', 'maDKSX',
             'brixKansui', 'nhietDoKansui', 'ngoaiQuanKansui',
             'brixSeasoning', 'ngoaiQuanSeasoning', 'doDayLaBot',
+            'ngoaiQuanSoi', 'moTaSoi',  // NEW
+            'apSuatHoiVan',  // NEW
             'nhietDauTrai', 'nhietDauPhai', 'nhietGiua1Trai', 'nhietGiua1Phai',
             'nhietGiua2Trai', 'nhietGiua2Phai', 'nhietGiua3Trai', 'nhietGiua3Phai',
             'nhietCuoiTrai', 'nhietCuoiPhai',
-            'camQuanCoTinh', 'camQuanMau', 'camQuanMui', 'camQuanVi'
+            'ngoaiQuanPhoiMi',  // NEW
+            'vanChamBHA',  // NEW
+            'camQuanCoTinh', 'camQuanMau', 'camQuanMui', 'camQuanVi',
+            'moTaCamQuan'  // NEW
         ];
 
         const data = {
@@ -384,6 +497,11 @@ class ProcessDataComponent extends BaseComponent {
                     span.textContent = '-';
                 }
             });
+            // Hide mô tả container
+            const moTaContainer = this.$('#moTaSoiContainer');
+            if (moTaContainer) {
+                moTaContainer.style.display = 'none';
+            }
         }
     }
 }
