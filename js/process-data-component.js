@@ -12,15 +12,18 @@ class ProcessDataComponent extends BaseComponent {
     }
 
     async render() {
+        const currentDate = new Date().toISOString().split('T')[0];
+        const currentTime = new Date().toTimeString().slice(0, 8);
+
         this.container.innerHTML = `
             <div class="fade-in">
                 <!-- Page Header -->
                 <div class="page-header mb-4">
                     <h2 class="page-title">
                         <i class="bi bi-clipboard-data me-2"></i>
-                        Nhập dữ liệu Process
+                        Data công nghệ mì
                     </h2>
-                    <p class="text-muted">Nhập thông tin kiểm tra quá trình sản xuất</p>
+                    <p class="text-muted">Nhập thông tin kiểm tra quá trình sản xuất mì</p>
                 </div>
 
                 <!-- Form Card -->
@@ -35,7 +38,7 @@ class ProcessDataComponent extends BaseComponent {
                                 </h5>
                                 
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">
                                             Site <span class="text-danger">*</span>
                                         </label>
@@ -48,7 +51,7 @@ class ProcessDataComponent extends BaseComponent {
                                         </select>
                                     </div>
                                     
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">
                                             Mã nhân viên QA <span class="text-danger">*</span>
                                         </label>
@@ -56,7 +59,19 @@ class ProcessDataComponent extends BaseComponent {
                                                placeholder="VD: QA001" required>
                                     </div>
                                     
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <label class="form-label">NSX (Ngày sản xuất)</label>
+                                        <input type="date" class="modern-input" id="nsx" 
+                                               value="${currentDate}">
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label class="form-label">Giờ kiểm tra</label>
+                                        <input type="time" class="modern-input" id="gioKiemTra" 
+                                               value="${currentTime}" step="1">
+                                    </div>
+                                    
+                                    <div class="col-md-4">
                                         <label class="form-label">
                                             Line SX <span class="text-danger">*</span>
                                         </label>
@@ -66,7 +81,7 @@ class ProcessDataComponent extends BaseComponent {
                                         </select>
                                     </div>
                                     
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">
                                             Mã ĐKSX <span class="text-danger">*</span>
                                         </label>
@@ -448,7 +463,7 @@ class ProcessDataComponent extends BaseComponent {
 
     collectFormData() {
         const fields = [
-            'site', 'maNhanVien', 'lineSX', 'maDKSX',
+            'site', 'maNhanVien', 'nsx', 'gioKiemTra', 'lineSX', 'maDKSX', // UPDATED: added nsx, gioKiemTra
             'brixKansui', 'nhietDoKansui', 'ngoaiQuanKansui',
             'brixSeasoning', 'ngoaiQuanSeasoning', 'doDayLaBot',
             'ngoaiQuanSoi', 'moTaSoi',  // NEW
@@ -464,6 +479,7 @@ class ProcessDataComponent extends BaseComponent {
 
         const data = {
             timestamp: new Date().toISOString(),
+            formType: 'process-data', // ADDED
             sanPham: this.$('#productName').textContent
         };
 
@@ -492,6 +508,10 @@ class ProcessDataComponent extends BaseComponent {
             if (moTaContainer) {
                 moTaContainer.style.display = 'none';
             }
+            
+            // Reset date and time to current
+            this.$('#nsx').value = new Date().toISOString().split('T')[0];
+            this.$('#gioKiemTra').value = new Date().toTimeString().slice(0, 8);
         }
     }
 }
