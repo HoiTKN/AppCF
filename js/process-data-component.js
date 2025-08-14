@@ -1,4 +1,4 @@
-// Process Data Form Component - Updated
+// Process Data Form Component - Updated (keeping original layout)
 class ProcessDataComponent extends BaseComponent {
     async initialize() {
         this.formData = {};
@@ -156,19 +156,8 @@ class ProcessDataComponent extends BaseComponent {
                                             Range: <span id="doDayRange">-</span>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Ngoại quan sợi (NEW) -->
-                        <div class="card-body border-top">
-                            <div class="form-section">
-                                <h5 class="form-section-title">
-                                    <i class="bi bi-activity me-2"></i>
-                                    Ngoại quan sợi
-                                </h5>
-                                
-                                <div class="row g-3">
+                                    
+                                    <!-- NEW: Ngoại quan sợi -->
                                     <div class="col-md-6">
                                         <label class="form-label">Ngoại quan sợi</label>
                                         <select class="modern-input modern-select" id="ngoaiQuanSoi">
@@ -178,6 +167,7 @@ class ProcessDataComponent extends BaseComponent {
                                         </select>
                                     </div>
                                     
+                                    <!-- NEW: Mô tả sợi (hiện khi không đạt) -->
                                     <div class="col-md-6" id="moTaSoiContainer" style="display: none;">
                                         <label class="form-label">Mô tả (nếu không đạt)</label>
                                         <textarea class="modern-input" id="moTaSoi" rows="2" 
@@ -187,7 +177,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- ĐKSX, áp suất hơi van thành phần (NEW) -->
+                        <!-- NEW: ĐKSX, áp suất hơi van thành phần -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -222,7 +212,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- Ngoại quan phôi mì (NEW) -->
+                        <!-- NEW: Ngoại quan phôi mì -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -243,7 +233,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- Van châm BHA/BHT (NEW) -->
+                        <!-- NEW: Van châm BHA/BHT -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -264,7 +254,7 @@ class ProcessDataComponent extends BaseComponent {
                             </div>
                         </div>
 
-                        <!-- Sensory Evaluation (UPDATED) -->
+                        <!-- Sensory Evaluation -->
                         <div class="card-body border-top">
                             <div class="form-section">
                                 <h5 class="form-section-title">
@@ -275,7 +265,7 @@ class ProcessDataComponent extends BaseComponent {
                                 <div class="row g-3">
                                     ${this.renderSensoryInputs()}
                                     
-                                    <!-- Mô tả cảm quan (NEW) -->
+                                    <!-- NEW: Mô tả cảm quan -->
                                     <div class="col-12">
                                         <label class="form-label">Mô tả cảm quan (nếu có)</label>
                                         <textarea class="modern-input" id="moTaCamQuan" rows="3" 
