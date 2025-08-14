@@ -73,6 +73,7 @@ class ModernApp {
                     { id: 'process-data', label: 'Process Data', icon: 'clipboard-data' },
                     { id: 'metal-detection', label: 'Kiểm soát máy dò kim loại', icon: 'shield-check' },
                     { id: 'daily-hygiene', label: 'Đánh giá vệ sinh hàng ngày', icon: 'droplet-half' },
+                    { id: 'ghp-hygiene', label: 'Đánh giá GHP khi ngưng line >12h', icon: 'clock-history' },
                     { id: 'product-changeover', label: 'Checklist chuyển đổi sản phẩm', icon: 'arrow-repeat' }
                 ]
             },
@@ -171,6 +172,9 @@ class ModernApp {
                 case 'daily-hygiene':
                     await componentLoader.load('daily-hygiene', container);
                     break;
+                case 'ghp-hygiene':
+                    await componentLoader.load('ghp-hygiene', container);
+                    break;
                 case 'product-changeover':
                     await componentLoader.load('product-changeover', container);
                     break;
@@ -205,6 +209,7 @@ class ModernApp {
             'process-data': 'Process Data',
             'metal-detection': 'Kiểm soát máy dò kim loại',
             'daily-hygiene': 'Đánh giá vệ sinh hàng ngày',
+            'ghp-hygiene': 'Đánh giá GHP khi ngưng line >12h',
             'product-changeover': 'Checklist chuyển đổi sản phẩm',
             'data-view': 'Xem dữ liệu',
             'analytics': 'Phân tích',
@@ -265,13 +270,15 @@ class ModernApp {
         const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
         const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
         const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+        const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
         const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
 
         const allData = [
             ...processData.map(d => ({ ...d, type: 'Process Data', badge: 'primary' })),
             ...metalData.map(d => ({ ...d, type: 'Metal Detection', badge: 'success' })),
             ...hygieneData.map(d => ({ ...d, type: 'Daily Hygiene', badge: 'info' })),
-            ...changeoverData.map(d => ({ ...d, type: 'Product Changeover', badge: 'warning' }))
+            ...ghpData.map(d => ({ ...d, type: 'GHP Hygiene', badge: 'warning' })),
+            ...changeoverData.map(d => ({ ...d, type: 'Product Changeover', badge: 'secondary' }))
         ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const tbody = document.getElementById('dataTableBody');
