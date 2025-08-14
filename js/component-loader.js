@@ -1,206 +1,365 @@
-// Component Loader System
-// Quản lý việc load và render các component động
-
-class ComponentLoader {
-    constructor() {
-        this.components = new Map();
-        this.currentComponent = null;
-    }
-
-    // Register a component
-    register(name, component) {
-        this.components.set(name, component);
-        console.log(`Component registered: ${name}`);
-    }
-
-    // Load a component
-    async load(name, container, params = {}) {
-        const Component = this.components.get(name);
-        
-        if (!Component) {
-            console.error(`Component not found: ${name}`);
-            return null;
-        }
-
-        try {
-            // Clean up previous component
-            if (this.currentComponent && this.currentComponent.destroy) {
-                this.currentComponent.destroy();
-            }
-
-            // Show loading state
-            this.showLoading(container);
-
-            // Create new component instance
-            const component = new Component(container, params);
-            
-            // Initialize component
-            await component.initialize();
-            
-            // Render component
-            await component.render();
-            
-            this.currentComponent = component;
-            
-            return component;
-        } catch (error) {
-            console.error(`Error loading component ${name}:`, error);
-            this.showError(container, error.message);
-            return null;
-        }
-    }
-
-    // Show loading state
-    showLoading(container) {
-        container.innerHTML = `
-            <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-                <div class="text-center">
-                    <div class="spinner-border text-primary mb-3" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="text-muted">Đang tải...</p>
-                </div>
-            </div>
-        `;
-    }
-
-    // Show error state
-    showError(container, message) {
-        container.innerHTML = `
-            <div class="alert alert-danger m-3" role="alert">
-                <h5 class="alert-heading">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Lỗi tải component
-                </h5>
-                <p>${message}</p>
-            </div>
-        `;
-    }
-
-    // Get current component
-    getCurrent() {
-        return this.currentComponent;
-    }
-
-    // Destroy current component
-    destroyCurrent() {
-        if (this.currentComponent && this.currentComponent.destroy) {
-            this.currentComponent.destroy();
-            this.currentComponent = null;
-        }
-    }
-}
-
-// Base Component Class
-class BaseComponent {
-    constructor(container, params = {}) {
-        this.container = container;
-        this.params = params;
-        this.state = {};
-        this.listeners = [];
-    }
-
-    // Initialize component
+// Dashboard Component
+class DashboardComponent extends BaseComponent {
     async initialize() {
-        // Override in child classes
+        // Load data from localStorage
+        this.loadData();
     }
 
-    // Render component
-    async render() {
-        // Override in child classes
-    }
+    loadData() {
+        // Get data from all forms
+        const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+        const metalDetectionData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
+        const dailyHygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+        const ghpHygieneData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
+        const productChangeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
 
-    // Update component state
-    setState(newState) {
-        this.state = { ...this.state, ...newState };
-        this.render();
-    }
-
-    // Add event listener
-    addEventListener(element, event, handler) {
-        element.addEventListener(event, handler);
-        this.listeners.push({ element, event, handler });
-    }
-
-    // Clean up component
-    destroy() {
-        // Remove event listeners
-        this.listeners.forEach(({ element, event, handler }) => {
-            element.removeEventListener(event, handler);
-        });
-        this.listeners = [];
+        // Calculate statistics
+        const today = new Date().toDateString();
         
-        // Clear container
-        if (this.container) {
-            this.container.innerHTML = '';
-        }
-    }
-
-    // Helper: Create element with HTML
-    createElement(html) {
-        const template = document.createElement('template');
-        template.innerHTML = html.trim();
-        return template.content.firstChild;
-    }
-
-    // Helper: Query selector in container
-    $(selector) {
-        return this.container.querySelector(selector);
-    }
-
-    // Helper: Query selector all in container
-    $$(selector) {
-        return this.container.querySelectorAll(selector);
-    }
-
-    // Helper: Show toast notification
-    showToast(title, message, type = 'info') {
-        const icons = {
-            success: 'bi-check-circle-fill',
-            error: 'bi-x-circle-fill',
-            warning: 'bi-exclamation-triangle-fill',
-            info: 'bi-info-circle-fill'
+        this.state = {
+            totalProcess: processData.length,
+            totalMetal: metalDetectionData.length,
+            totalHygiene: dailyHygieneData.length,
+            totalGHP: ghpHygieneData.length,
+            totalChangeover: productChangeoverData.length,
+            todayProcess: processData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayMetal: metalDetectionData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayHygiene: dailyHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayGHP: ghpHygieneData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            todayChangeover: productChangeoverData.filter(d => new Date(d.timestamp).toDateString() === today).length,
+            recentRecords: this.getRecentRecords(processData, metalDetectionData, dailyHygieneData, ghpHygieneData, productChangeoverData)
         };
+    }
 
-        const toastHtml = `
-            <div class="modern-toast toast-${type} fade-in">
-                <i class="bi ${icons[type]} toast-icon"></i>
-                <div class="toast-content">
-                    <div class="fw-bold">${title}</div>
-                    <div class="small">${message}</div>
+    getRecentRecords(process, metal, hygiene, ghp, changeover) {
+        const allRecords = [
+            ...process.map(r => ({ ...r, type: 'Process Data', icon: 'clipboard-data', color: 'primary' })),
+            ...metal.map(r => ({ ...r, type: 'Metal Detection', icon: 'shield-check', color: 'success' })),
+            ...hygiene.map(r => ({ ...r, type: 'Daily Hygiene', icon: 'droplet-half', color: 'info' })),
+            ...ghp.map(r => ({ ...r, type: 'GHP Hygiene', icon: 'clock-history', color: 'warning' })),
+            ...changeover.map(r => ({ ...r, type: 'Product Changeover', icon: 'arrow-repeat', color: 'secondary' }))
+        ];
+
+        return allRecords
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 10);
+    }
+
+    async render() {
+        const todayTotal = this.state.todayProcess + this.state.todayMetal + 
+                          this.state.todayHygiene + this.state.todayGHP + this.state.todayChangeover;
+        
+        const totalRecords = this.state.totalProcess + this.state.totalMetal + 
+                           this.state.totalHygiene + this.state.totalGHP + this.state.totalChangeover;
+
+        this.container.innerHTML = `
+            <div class="fade-in">
+                <!-- Page Header -->
+                <div class="page-header mb-4">
+                    <h2 class="page-title">
+                        <i class="bi bi-speedometer2 me-2"></i>
+                        Dashboard
+                    </h2>
+                    <p class="text-muted">Tổng quan hệ thống quản lý chất lượng</p>
                 </div>
-                <button class="btn-close ms-auto" onclick="this.parentElement.remove()"></button>
+
+                <!-- Stats Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalProcess)}</div>
+                            <div class="stat-label">Process Data</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayProcess} hôm nay
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.1s;">
+                            <div class="stat-icon success">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalMetal)}</div>
+                            <div class="stat-label">Metal Detection</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayMetal} hôm nay
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.2s;">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-droplet-half"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalHygiene)}</div>
+                            <div class="stat-label">Daily Hygiene</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayHygiene} hôm nay
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.3s;">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalGHP)}</div>
+                            <div class="stat-label">GHP Hygiene</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayGHP} hôm nay
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.4s;">
+                            <div class="stat-icon danger">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(this.state.totalChangeover)}</div>
+                            <div class="stat-label">Product Changeover</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${this.state.todayChangeover} hôm nay
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card slide-up" style="animation-delay: 0.5s;">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-bar-chart"></i>
+                            </div>
+                            <div class="stat-value">${this.formatNumber(totalRecords)}</div>
+                            <div class="stat-label">Tổng cộng</div>
+                            <div class="stat-change positive">
+                                <i class="bi bi-arrow-up"></i>
+                                +${todayTotal} hôm nay
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Chart Section -->
+                    <div class="col-lg-8">
+                        <div class="modern-card">
+                            <div class="card-header">
+                                <h5 class="card-title">Biểu đồ hoạt động 7 ngày gần nhất</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="activityChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Records -->
+                    <div class="col-lg-4">
+                        <div class="modern-card">
+                            <div class="card-header">
+                                <h5 class="card-title">Hoạt động gần đây</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="recent-records">
+                                    ${this.renderRecentRecords()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row g-3 mt-3">
+                    <div class="col-12">
+                        <div class="modern-card">
+                            <div class="card-header">
+                                <h5 class="card-title">Thao tác nhanh</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-primary w-100" onclick="app.navigateTo('process-data')">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Process Data mới
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('metal-detection')">
+                                            <i class="bi bi-shield-plus"></i>
+                                            Metal Detection
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('daily-hygiene')">
+                                            <i class="bi bi-droplet"></i>
+                                            Daily Hygiene
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('ghp-hygiene')">
+                                            <i class="bi bi-clock-history"></i>
+                                            GHP Hygiene
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('product-changeover')">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                            Changeover
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <button class="btn btn-modern btn-outline w-100" onclick="app.navigateTo('data-view')">
+                                            <i class="bi bi-table"></i>
+                                            Xem dữ liệu
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
-        const toastContainer = document.getElementById('toastContainer');
-        const toastElement = this.createElement(toastHtml);
-        toastContainer.appendChild(toastElement);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            toastElement.remove();
-        }, 5000);
+        // Render chart after DOM is ready
+        setTimeout(() => this.renderChart(), 100);
     }
 
-    // Helper: Format date
-    formatDate(date) {
-        return new Date(date).toLocaleDateString('vi-VN');
+    renderRecentRecords() {
+        if (this.state.recentRecords.length === 0) {
+            return '<p class="text-muted text-center">Chưa có dữ liệu</p>';
+        }
+
+        return this.state.recentRecords.map(record => `
+            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-shrink-0">
+                    <div class="rounded-circle bg-${record.color} bg-opacity-10 p-2">
+                        <i class="bi bi-${record.icon} text-${record.color}"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <div class="fw-semibold small">${record.type}</div>
+                    <div class="text-muted small">
+                        ${record.site || ''} - ${record.line || record.lineSX || ''}
+                    </div>
+                    <div class="text-muted small">
+                        ${this.formatTime(record.timestamp)}
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="app.viewRecord('${record.id}', '${record.type}')">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+        `).join('');
     }
 
-    // Helper: Format time
-    formatTime(date) {
-        return new Date(date).toLocaleTimeString('vi-VN', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+    renderChart() {
+        const canvas = document.getElementById('activityChart');
+        if (!canvas) return;
+
+        // Prepare data for last 7 days
+        const last7Days = [];
+        const processDataByDay = [];
+        const metalDataByDay = [];
+        const hygieneDataByDay = [];
+        const ghpDataByDay = [];
+        const changeoverDataByDay = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toDateString();
+            
+            last7Days.push(date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit' }));
+            
+            const processData = JSON.parse(localStorage.getItem('qaProcessData') || '[]');
+            const metalData = JSON.parse(localStorage.getItem('qaMetalDetectionData') || '[]');
+            const hygieneData = JSON.parse(localStorage.getItem('qaDailyHygieneData') || '[]');
+            const ghpData = JSON.parse(localStorage.getItem('qaGHPHygieneData') || '[]');
+            const changeoverData = JSON.parse(localStorage.getItem('qaProductChangeoverData') || '[]');
+            
+            processDataByDay.push(processData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            metalDataByDay.push(metalData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            hygieneDataByDay.push(hygieneData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            ghpDataByDay.push(ghpData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+            changeoverDataByDay.push(changeoverData.filter(d => new Date(d.timestamp).toDateString() === dateStr).length);
+        }
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: last7Days,
+                datasets: [
+                    {
+                        label: 'Process Data',
+                        data: processDataByDay,
+                        backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Metal Detection',
+                        data: metalDataByDay,
+                        backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Daily Hygiene',
+                        data: hygieneDataByDay,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'GHP Hygiene',
+                        data: ghpDataByDay,
+                        backgroundColor: 'rgba(245, 158, 11, 0.5)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Changeover',
+                        data: changeoverDataByDay,
+                        backgroundColor: 'rgba(107, 114, 128, 0.5)',
+                        borderColor: 'rgba(107, 114, 128, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
         });
-    }
-
-    // Helper: Format number
-    formatNumber(num) {
-        return new Intl.NumberFormat('vi-VN').format(num);
     }
 }
 
-// Create global component loader instance
-window.componentLoader = new ComponentLoader();
+// Register component
+componentLoader.register('dashboard', DashboardComponent);
